@@ -1,0 +1,62 @@
+{
+  "Citra": {
+    "aa": 12.5,
+    "type": "dual",
+    "notes": "Grapefruit, tropical, mango"
+  },
+  "Mosaic": {
+    "aa": 12.0,
+    "type": "dual",
+    "notes": "Blueberry, tangerine, floral"
+  },
+  "Simcoe": {
+    "aa": 13.0,
+    "type": "dual",
+    "notes": "Pine, passionfruit, earth"
+  },
+  "Galaxy": {
+    "aa": 14.5,
+    "type": "aroma",
+    "notes": "Passionfruit, citrus, peach"
+  },
+  "Cascade": {
+    "aa": 6.5,
+    "type": "aroma",
+    "notes": "Floral, grapefruit, spice"
+  },
+  "Centennial": {
+    "aa": 10.0,
+    "type": "dual",
+    "notes": "Lemon, floral, clean pine"
+  },
+  "Saaz": {
+    "aa": 3.5,
+    "type": "aroma",
+    "notes": "Delicate, spicy, herbal noble"
+  },
+  "Hallertau Mittelfruh": {
+    "aa": 4.0,
+    "type": "aroma",
+    "notes": "Spicy, herbal, floral"
+  },
+  "Amarillo": {
+    "aa": 9.2,
+    "type": "aroma",
+    "notes": "Orange, floral, melon"
+  },
+  "Fuggle": {
+    "aa": 4.5,
+    "type": "aroma",
+    "notes": "Earthy, woody, mild floral"
+  },
+  "East Kent Goldings": {
+    "aa": 5.0,
+    "type": "aroma",
+    "notes": "Smooth, sweet, honey, floral"
+  },
+  "Magnum": {
+    "aa": 14.0,
+    "type": "bittering",
+    "notes": "Clean, smooth neutral bittering"
+  }
+}

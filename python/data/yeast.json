@@ -1,0 +1,44 @@
+{
+  "SafAle US-05": {
+    "attenuation": 0.81,
+    "type": "American Ale",
+    "flocculation": "Medium",
+    "optimal_temp_f": 68
+  },
+  "SafAle S-04": {
+    "attenuation": 0.75,
+    "type": "English Ale",
+    "flocculation": "High",
+    "optimal_temp_f": 66
+  },
+  "Lallemand Verdant IPA": {
+    "attenuation": 0.78,
+    "type": "New England / Hazy",
+    "flocculation": "Medium",
+    "optimal_temp_f": 70
+  },
+  "SafLager W-34/70": {
+    "attenuation": 0.83,
+    "type": "German Lager",
+    "flocculation": "High",
+    "optimal_temp_f": 54
+  },
+  "Lallemand NovaLager": {
+    "attenuation": 0.80,
+    "type": "Modern Hybrid Lager",
+    "flocculation": "Medium-High",
+    "optimal_temp_f": 64
+  },
+  "SafAle WB-06": {
+    "attenuation": 0.86,
+    "type": "Wheat / Weizen",
+    "flocculation": "Low",
+    "optimal_temp_f": 72
+  },
+  "Lallemand Philly Sour": {
+    "attenuation": 0.76,
+    "type": "Sour Ale (Lactic)",
+    "flocculation": "High",
+    "optimal_temp_f": 74
+  }
+}

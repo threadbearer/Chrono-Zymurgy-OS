@@ -10,7 +10,8 @@ import { MASTER_KITS } from './data/kits';
 function MainApp() {
   const { mode } = useTerminology();
   const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' | 'simulator' | 'tracker' | 'codex'
-  const [simulatorKit, setSimulatorKit] = useState(MASTER_KITS[1]); // Brewgooder Hazy IPA default
+  const [simulatorKit, setSimulatorKit] = useState(MASTER_KITS[0]); // Flagship Chrono-Haze τ-Zero default
+
   
   // Custom DIY kits stored in localStorage
   const [customKits, setCustomKits] = useState(() => {

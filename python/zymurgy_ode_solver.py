@@ -86,6 +86,24 @@ def calculate_initial_oxygen(air_pocket_ml: float, protocol: str, shake_90min: b
     return total_o2_mg / PINTER_FILL_L
 
 
+# ==============================================================================
+# CALIBRATED BIOPHYSICAL ODE MODEL PARAMETERS & CONSTANTS
+# ==============================================================================
+REFERENCE_TEMP_KELVIN: float = 293.15        # 20°C (68°F) standard reference baseline
+ARRHENIUS_ACTIVATION_FACTOR: float = 4500.0  # Ea/R effective activation energy scaling
+BASE_MAX_GROWTH_RATE_MU: float = 0.11        # Max specific growth rate (1/hr) at 20°C
+SUGAR_SATURATION_CONSTANT_KS: float = 4.0    # Monod half-saturation constant (g/L)
+BIOMASS_YIELD_ON_SUGAR_YX: float = 0.08      # Yield coefficient (g dry cell / g sugar)
+ETHANOL_YIELD_ON_SUGAR_YP: float = 0.48      # Stoichiometric ethanol yield (g EtOH / g sugar)
+CO2_YIELD_RATIO: float = 0.95                # Mass ratio of CO2 to EtOH (MW 44.01 / 46.07)
+NATURAL_DECAY_RATE: float = 0.002            # Cellular death & autolysis baseline (1/hr)
+CELL_MAINTENANCE_COEFF: float = 0.0015       # Endogenous sugar consumption for cell maintenance
+ETHANOL_TOXICITY_CEILING_PMAX: float = 85.0  # Ethanol tolerance threshold (~10.5% ABV)
+OXYGEN_UPTAKE_RATE_KO2: float = 0.35         # Specific O2 consumption factor during growth
+DIACETYL_FORMATION_RATE: float = 0.045       # Alpha-acetolactate chemical decarboxylation
+DIACETYL_REDUCTION_RATE: float = 0.075       # Enzymatic diacetyl reduction by active yeast
+
+
 class BiophysicsODESolver:
     """Solves continuous-time biophysics differential equations for brewing kinetics."""
 
@@ -93,24 +111,25 @@ class BiophysicsODESolver:
         self.config = config
         self.temp_k = temp_f_to_k(config.temp_f)
 
-        # Kinetic parameters calibrated for brewing yeast
         # Arrhenius temperature scaling: k(T) = k_ref * exp(-Ea/R * (1/T - 1/T_ref))
-        t_ref_k = 293.15 # 20°C (68°F)
-        temp_scale = np.exp(-4500.0 * ((1.0 / self.temp_k) - (1.0 / t_ref_k)))
+        temp_scale = np.exp(
+            -ARRHENIUS_ACTIVATION_FACTOR * ((1.0 / self.temp_k) - (1.0 / REFERENCE_TEMP_KELVIN))
+        )
 
-        self.mu_max = 0.11 * temp_scale    # Max yeast growth rate (1/h)
-        self.ks_sugar = 4.0                # Monod saturation constant (g/L)
-        self.yield_x_s = 0.08              # Biomass yield on sugar (g cells / g sugar)
-        self.yield_p_s = 0.48              # Ethanol yield on sugar (g EtOH / g sugar)
-        self.co2_yield_p = 0.95            # g CO2 generated per g EtOH produced
-        self.decay_rate = 0.002            # Natural yeast death/dormancy rate (1/h)
+        self.mu_max = BASE_MAX_GROWTH_RATE_MU * temp_scale
+        self.ks_sugar = SUGAR_SATURATION_CONSTANT_KS
+        self.yield_x_s = BIOMASS_YIELD_ON_SUGAR_YX
+        self.yield_p_s = ETHANOL_YIELD_ON_SUGAR_YP
+        self.co2_yield_p = CO2_YIELD_RATIO
+        self.decay_rate = NATURAL_DECAY_RATE
 
         # Diacetyl kinetics (ppm/h)
-        self.k_diacetyl_form = 0.045 * temp_scale  # Alpha-acetolactate -> Diacetyl
-        self.k_diacetyl_reduct = 0.075 * temp_scale # Enzymatic reduction by active yeast
+        self.k_diacetyl_form = DIACETYL_FORMATION_RATE * temp_scale
+        self.k_diacetyl_reduct = DIACETYL_REDUCTION_RATE * temp_scale
 
         # Headspace volume in Liters
         self.v_headspace_l = max(0.200, self.config.air_pocket_ml / 1000.0)
+
 
     def derivatives(self, t: float, y: np.ndarray) -> np.ndarray:
         """
@@ -132,19 +151,19 @@ class BiophysicsODESolver:
         O2 = max(0.0, O2)
 
         # 1. Monod growth with ethanol inhibition factor: (1 - P/P_max)
-        p_max = 85.0 # ~10.5% ABV ethanol ceiling for typical ale strains
-        inhibition = max(0.05, 1.0 - (P / p_max) ** 1.5)
+        inhibition = max(0.05, 1.0 - (P / ETHANOL_TOXICITY_CEILING_PMAX) ** 1.5)
         mu = self.mu_max * (S / (self.ks_sugar + S)) * inhibition
 
         # Oxygen uptake during lag/early exponential phase
-        dO2_dt = -0.35 * mu * X * (O2 / (0.5 + O2)) if O2 > 0.01 else 0.0
+        dO2_dt = -OXYGEN_UPTAKE_RATE_KO2 * mu * X * (O2 / (0.5 + O2)) if O2 > 0.01 else 0.0
 
         # Biomass growth
         dX_dt = (mu - self.decay_rate) * X
 
         # Substrate consumption
-        maintenance = 0.0015 * X
+        maintenance = CELL_MAINTENANCE_COEFF * X
         dS_dt = - (1.0 / self.yield_x_s) * mu * X - maintenance
+
         if S <= 0.1:
             dS_dt = 0.0
 

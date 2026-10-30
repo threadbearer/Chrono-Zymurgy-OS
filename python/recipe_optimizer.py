@@ -15,6 +15,8 @@ Mathematical optimization for 5,450 mL Pinter vessels:
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field, field_validator
 import math
+import json
+from pathlib import Path
 
 PINTER_VOLUME_L = 5.450      # 5,450 mL liquid fill line
 PINTER_VOLUME_GAL = 1.4398   # 1.4398 US Gallons
@@ -24,32 +26,29 @@ DME_PPG = 44.0  # Dry Malt Extract provides ~44 PPG (98% dry solids)
 LME_PPG = 36.0  # Liquid Malt Extract provides ~36 PPG (80% solids)
 LME_TO_DME_RATIO = 1.222
 
-# Commercial Hop Database: Alpha Acid % (typical crop averages)
-HOP_DATABASE = {
+DATA_DIR = Path(__file__).resolve().parent / "data"
+
+def _load_json_database(filename: str, fallback: Dict[str, Any]) -> Dict[str, Any]:
+    file_path = DATA_DIR / filename
+    if file_path.exists():
+        try:
+            return json.loads(file_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return fallback
+
+# Commercial Hop & Yeast Databases externalized to python/data/*.json
+HOP_DATABASE: Dict[str, Dict[str, Any]] = _load_json_database("hops.json", {
     "Citra": {"aa": 12.5, "type": "dual", "notes": "Grapefruit, tropical, mango"},
     "Mosaic": {"aa": 12.0, "type": "dual", "notes": "Blueberry, tangerine, floral"},
     "Simcoe": {"aa": 13.0, "type": "dual", "notes": "Pine, passionfruit, earth"},
-    "Galaxy": {"aa": 14.5, "type": "aroma", "notes": "Passionfruit, citrus, peach"},
-    "Cascade": {"aa": 6.5, "type": "aroma", "notes": "Floral, grapefruit, spice"},
-    "Centennial": {"aa": 10.0, "type": "dual", "notes": "Lemon, floral, clean pine"},
-    "Saaz": {"aa": 3.5, "type": "aroma", "notes": "Delicate, spicy, herbal noble"},
-    "Hallertau Mittelfruh": {"aa": 4.0, "type": "aroma", "notes": "Spicy, herbal, floral"},
-    "Amarillo": {"aa": 9.2, "type": "aroma", "notes": "Orange, floral, melon"},
-    "Fuggle": {"aa": 4.5, "type": "aroma", "notes": "Earthy, woody, mild floral"},
-    "East Kent Goldings": {"aa": 5.0, "type": "aroma", "notes": "Smooth, sweet, honey, floral"},
-    "Magnum": {"aa": 14.0, "type": "bittering", "notes": "Clean, smooth neutral bittering"},
-}
+})
 
-# Commercial Yeast Database with typical attenuation and flocculation
-YEAST_DATABASE = {
+YEAST_DATABASE: Dict[str, Dict[str, Any]] = _load_json_database("yeast.json", {
     "SafAle US-05": {"attenuation": 0.81, "type": "American Ale", "flocculation": "Medium", "optimal_temp_f": 68},
-    "SafAle S-04": {"attenuation": 0.75, "type": "English Ale", "flocculation": "High", "optimal_temp_f": 66},
     "Lallemand Verdant IPA": {"attenuation": 0.78, "type": "New England / Hazy", "flocculation": "Medium", "optimal_temp_f": 70},
-    "SafLager W-34/70": {"attenuation": 0.83, "type": "German Lager", "flocculation": "High", "optimal_temp_f": 54},
-    "Lallemand NovaLager": {"attenuation": 0.80, "type": "Modern Hybrid Lager", "flocculation": "Medium-High", "optimal_temp_f": 64},
-    "SafAle WB-06": {"attenuation": 0.86, "type": "Wheat / Weizen", "flocculation": "Low", "optimal_temp_f": 72},
-    "Lallemand Philly Sour": {"attenuation": 0.76, "type": "Sour Ale (Lactic)", "flocculation": "High", "optimal_temp_f": 74},
-}
+})
+
 
 
 class RecipeTargetInput(BaseModel):

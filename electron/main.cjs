@@ -39,8 +39,17 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      // Architectural Security Governance Note:
+      // 'sandbox: false' is required to permit preload.cjs to load native Electron IPC
+      // bindings across Pop!_OS desktop windowing sessions without bundling overhead.
+      // Compensating Security Controls in effect:
+      //  1. nodeIntegration: false (renderer window has zero Node.js runtime access).
+      //  2. contextIsolation: true (preload APIs are exposed strictly via contextBridge).
+      //  3. setWindowOpenHandler: strictly denies arbitrary external navigation.
+      //  4. IPC handlers: strictly validated and sanitized before child_process execution.
       sandbox: false,
     },
+
   });
 
   const devUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
