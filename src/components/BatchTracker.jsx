@@ -43,7 +43,8 @@ export default function BatchTracker({ customKits = [], onSelectForSimulator }) 
       {
         id: 'pinter-1',
         pinterName: 'PINTER // 01 (CARBON ONYX)',
-        kitId: MASTER_KITS[0].id, // Flagship Chrono-Haze τ-Zero
+        kitId: MASTER_KITS[0].id, // Flagship Hazy Tau IPA
+
         pitchTimestamp: pitchDate.toISOString().slice(0, 16),
         ambientTempF: 72,
         determinationMode: 'auto',

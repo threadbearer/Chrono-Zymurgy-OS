@@ -1,7 +1,7 @@
 [
   {
-    "id": "chrono-haze-tau-zero",
-    "name": "Chrono-Haze τ-Zero",
+    "id": "hazy-tau-ipa",
+    "name": "Hazy Tau IPA",
     "subtitle": "Flagship Double Dry-Hopped Hazy IPA",
     "style": "New England IPA",
     "category": "Hazy / NEIPA",
@@ -240,8 +240,8 @@
     "isLocked": true
   },
   {
-    "id": "ridge-runner-tropical-ipa",
-    "name": "Ridge Runner Tropical IPA",
+    "id": "blue-ridge-mountains-tropical-ipa",
+    "name": "Blue Ridge Mountains Tropical IPA",
     "subtitle": "Highland Mango & Papaya IPA",
     "style": "Tropical IPA",
     "category": "IPA",
@@ -480,8 +480,8 @@
     "isLocked": true
   },
   {
-    "id": "hacienda-sol-mexican-lager",
-    "name": "Hacienda Sol Mexican Lager",
+    "id": "tia-chela-mexican-lager",
+    "name": "Tia Chela Mexican Lager",
     "subtitle": "Sun-Drenched Lime-Crisp Cerveza",
     "style": "Mexican Lager",
     "category": "Lager",
@@ -540,8 +540,8 @@
     "isLocked": true
   },
   {
-    "id": "daybreak-golden-lager",
-    "name": "Daybreak Golden Lager",
+    "id": "golden-hour-lager",
+    "name": "Golden Hour Lager",
     "subtitle": "Crisp Bavarian Malt & Noble Hops",
     "style": "Helles / Golden Lager",
     "category": "Lager",
@@ -1140,8 +1140,8 @@
     "isLocked": true
   },
   {
-    "id": "obsidian-dublin-porter",
-    "name": "Obsidian Dublin Porter",
+    "id": "obsidian-porter",
+    "name": "Obsidian Porter",
     "subtitle": "Roasty Coffee & Dark Chocolate Porter",
     "style": "Irish Stout / Porter",
     "category": "Stout / Porter",
@@ -1200,8 +1200,8 @@
     "isLocked": true
   },
   {
-    "id": "velvet-shadow-cream-stout",
-    "name": "Velvet Shadow Cream Stout",
+    "id": "velvet-spectrum-cream-stout",
+    "name": "Velvet Spectrum Cream Stout",
     "subtitle": "Lactose Silk & Cocoa Nib Dessert Stout",
     "style": "Milk Stout",
     "category": "Stout / Porter",

@@ -17,7 +17,8 @@ Instantly switches every metric badge, chart axis, tooltip, and report between:
 - **🧠 Human-Experience Mode:** *Living-Rhythm Brewing / Visceral Feel* (Breath clock, warm rest & sweetening window, sip weight & silk, butterscotch glow, bubble tingle, golden fuzzy buzz).
 
 ### 2. 24-Kit Master Catalog & DIY Open-Source Fresh Press Builder
-- **Flagship Reference Formulation:** Features the fully unlocked, 100% original reference recipe **Chrono-Haze &tau;-Zero** (Double Dry-Hopped Hazy IPA), showcasing the complete Bill of Materials, hop tea extraction kinetics, and biophysical vector radar profiles.
+- **Flagship Reference Formulation:** Features the fully unlocked, 100% original reference recipe **Hazy Tau IPA** (Double Dry-Hopped Hazy IPA), showcasing the complete Bill of Materials, hop tea extraction kinetics, and biophysical vector radar profiles.
+
 - **Chrono-Vault Security Gating:** Commercial clone Bill of Materials formulations are encrypted under a local protocol key, demonstrating clean architectural gating while showcasing the entire catalog's kinetic curves, style classifications, and economic telemetry.
 - **DME / LME Unit Converter:** Real-time toggling between Dry Malt Extract (g / oz) and Liquid Malt Extract ($\times 1.22$ factor).
 - **10-Minute Hop Teas:** Concentrated hop boil schedules scaled for the 5,450 mL fill line.

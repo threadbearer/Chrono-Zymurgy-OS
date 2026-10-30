@@ -33,5 +33,6 @@ This constitution establishes the architectural and quality rules for developers
 
 ### Rule 5: Proprietary IP Protection & Security Gating
 - Commercial reverse-engineered clone formulations must remain gated under the Chrono-Vault protocol.
-- Only non-infringing, original formulations (e.g., Chrono-Haze &tau;-Zero) may have full public bills of materials.
+- Only non-infringing, original formulations (e.g., Hazy Tau IPA) may have full public bills of materials.
+
 - Private recipe keys and master databases must reside in `.env*.local` or `src/data/kits.vault.*` and never be committed to Git.

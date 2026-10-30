@@ -29,7 +29,8 @@ export default function MasterCatalog({ onSelectForSimulator, onSelectForTracker
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedKit, setSelectedKit] = useState(MASTER_KITS[0]); // Flagship Chrono-Haze τ-Zero
+  const [selectedKit, setSelectedKit] = useState(MASTER_KITS[0]); // Flagship Hazy Tau IPA
+
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [maltUnit, setMaltUnit] = useState('dme_grams'); // 'dme_grams' | 'dme_oz' | 'lme_grams' | 'lme_oz'
   const [vaultKeyInput, setVaultKeyInput] = useState('');
