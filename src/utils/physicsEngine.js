@@ -47,8 +47,8 @@ export function simulateFermentation({
   // Higher temp and higher ABV increase foam vigor
   const tempFactor = 1 + (tempF - 68) * 0.035;
   const isWheatOrOats = kit?.style?.toLowerCase().includes('hazy') ||
-                        kit?.style?.toLowerCase().includes('wit') ||
-                        kit?.style?.toLowerCase().includes('wheat');
+    kit?.style?.toLowerCase().includes('wit') ||
+    kit?.style?.toLowerCase().includes('wheat');
   const styleMultiplier = isWheatOrOats ? 1.35 : 1.10;
   const krausenVolumeMl = Math.round(520 * tempFactor * (kit?.abv ? kit.abv / 5.0 : 1.0) * styleMultiplier);
   const krausenClearanceMl = airPocketMl - krausenVolumeMl;
@@ -59,7 +59,7 @@ export function simulateFermentation({
   // Cold lock at 38°F dramatically cleanses dense cells and trub
   const coldSettlingProgress = Math.min(1.0, Math.pow(fridgeHours / 168, 0.75));
 
-  // Mother cell settling rate vs Virgin Daughter settling rate
+  // Mother cell settling rate vs   Daughter settling rate
   // G0/G1 mothers (scarred, dense) settle 3.5x faster than small smooth G4 daughters
   let motherRetained = 0;
   let trubDragScore = 1.0;
@@ -75,7 +75,7 @@ export function simulateFermentation({
     trubDragScore = Number((6.8 + (1 - coldSettlingProgress) * 2.2).toFixed(1));
   }
 
-  // Virgin G4 daughter cell count per 500 mL pint
+  //   G4 daughter cell count per 500 mL pint
   // Optimum is 20 - 32 billion cells for rich silk without chalk
   const baseDaughterCellsBillion = 38 * daughterFraction;
   const daughterColdSettling = coldSettlingProgress * 0.42; // daughters remain buoyantly suspended
@@ -148,7 +148,7 @@ export function simulateFermentation({
   tauSteps.forEach((tau) => {
     // Mothers peak early, then settle
     const motherPct = tau <= 0.6 ? 70 - tau * 30 : Math.max(10, 52 - tau * 28);
-    // Virgin daughters flourish from 0.4 tau onwards
+    //   daughters flourish from 0.4 tau onwards
     const daughterGrowth = tau <= 0.4 ? tau * 45 : Math.min(85, 18 + tau * 42 * (Gn / 4));
     timeSeriesDynasty.push({
       phase: `${tau.toFixed(2)} τ`,

@@ -10,7 +10,7 @@ Models the multi-physics of pressurized vessel fermentation (Pinter 5,450 mL):
 3. Ethanol accumulation: dP/dt
 4. Henry's Law continuous CO2 mass transfer & headspace pressure: dP_head/dt
 5. Diacetyl formation (alpha-acetolactate decarboxylation) & enzymatic reabsorption: dDC/dt
-6. Stokes' Law hydrodynamic cell sedimentation (scarred G0 mothers vs buoyant G4 virgin daughters)
+6. Stokes' Law hydrodynamic cell sedimentation (scarred G0 mothers vs buoyant G4   daughters)
    under conical funnel capture vs missing funnel washback.
 """
 
@@ -36,7 +36,7 @@ DENSITY_CELL_KG_M3 = 1100.0   # Yeast cell density ~ 1.10 g/cm^3
 DENSITY_WORT_KG_M3 = 1045.0   # Wort density ~ 1.045 g/cm^3
 VISCOSITY_WORT_PA_S = 0.0018  # Dynamic viscosity ~ 1.8 mPa*s at 20°C
 RADIUS_MOTHER_M = 4.2e-6      # Scarred G0/G1 mother radius ~ 4.2 um
-RADIUS_DAUGHTER_M = 2.4e-6    # Virgin G4 daughter radius ~ 2.4 um
+RADIUS_DAUGHTER_M = 2.4e-6    #   G4 daughter radius ~ 2.4 um
 
 
 @dataclass
@@ -260,7 +260,7 @@ class BiophysicsODESolver:
             mother_retention = max(0.40, 0.75 * (1.0 - cold_progress * 0.40))
             trub_drag = round(float(6.5 + (1.0 - cold_progress) * 2.2), 1)
 
-        # Suspended Virgin G4 Daughters per 500mL pint
+        # Suspended   G4 Daughters per 500mL pint
         base_g4_billions = 36.0 * daughter_fraction
         g4_pint_billions = round(float(base_g4_billions * (1.0 - cold_progress * 0.40)), 1)
 

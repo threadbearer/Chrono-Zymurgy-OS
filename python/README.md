@@ -8,7 +8,7 @@ A high-performance Python package providing mathematical simulation and optimiza
    - Solves coupled non-linear differential equations via `scipy.integrate.solve_ivp` (Radau / RK45).
    - Models Monod biomass kinetics, substrate depletion, ethanol production, and Henry's Law continuous $CO_2$ mass transfer.
    - Calculates diacetyl formation ($\alpha$-acetolactate decarboxylation) and enzymatic yeast reabsorption window.
-   - Simulates Stokes' Law hydrodynamic sedimentation for scarred $G_0$ mother cells vs buoyant $G_4$ virgin daughter cells under conical funnel separation vs missing funnel washback.
+   - Simulates Stokes' Law hydrodynamic sedimentation for scarred $G_0$ mother cells vs buoyant $G_4$   daughter cells under conical funnel separation vs missing funnel washback.
 
 2. **AI Recipe Clone & Formulation Optimizer (`recipe_optimizer.py`):**
    - Calculates exact Dry/Liquid Malt Extract (DME/LME) mass for target Original Gravity and ABV for the 5,450 mL Pinter volume.

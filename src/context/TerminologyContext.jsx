@@ -16,7 +16,7 @@ export const TERMINOLOGY_DICTIONARY = {
   polish_phase: {
     biophysics: '+0.25 τ Daughter Polish Window',
     human: 'The Warm Rest & Sweetening Window',
-    bioDescription: 'Post-horizon metabolic window where virgin daughter cells reabsorb diacetyl and finish secondary conditioning.',
+    bioDescription: 'Post-horizon metabolic window where   daughter cells reabsorb diacetyl and finish secondary conditioning.',
     humanDescription: 'A gentle rest at room temp where the yeast cleans up rough edges and turns the brew silky smooth.'
   },
   cold_phase: {
@@ -78,7 +78,7 @@ export const TERMINOLOGY_DICTIONARY = {
     human: 'The Golden Fuzzy Buzz (Mellow Euphoria & Nutrition)',
     shortBio: 'Soma-Index (Φ)',
     shortHuman: 'Golden Fuzzy Buzz',
-    bioDescription: 'Nutritional matrix of bioavailable G4 virgin daughter yeast, active glutathione (GSH), and B-complex vitamins.',
+    bioDescription: 'Nutritional matrix of bioavailable G4   daughter yeast, active glutathione (GSH), and B-complex vitamins.',
     humanDescription: 'The gentle, cheerful, head-to-toe warm buzz that leaves you feeling great tomorrow morning.'
   },
   // Additional UI labels
@@ -95,7 +95,7 @@ export const TERMINOLOGY_DICTIONARY = {
     human: 'The Sludge Guard Funnel (Keep Trub Out)',
   },
   yeast_generations: {
-    biophysics: 'Generational Dynasty (G₀ Mother Cells → G₄ Virgin Daughters)',
+    biophysics: 'Generational Dynasty (G₀ Mother Cells → G₄   Daughters)',
     human: 'The Living Yeast Family Tree (Old Mothers → Youthful Daughters)',
   },
   undock_event: {
@@ -110,8 +110,8 @@ export const TERMINOLOGY_DICTIONARY = {
 
 const TerminologyContext = createContext({
   mode: 'biophysics', // 'biophysics' | 'human'
-  toggleMode: () => {},
-  setMode: () => {},
+  toggleMode: () => { },
+  setMode: () => { },
   t: (key) => '',
   getTerm: (key) => ({}),
 });

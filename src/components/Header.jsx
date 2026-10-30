@@ -11,10 +11,13 @@ import {
   Wind,
   Layers,
   Activity,
-  Flame
+  Flame,
+  Bot,
+  Compass,
+  HelpCircle
 } from 'lucide-react';
 
-export default function Header({ activeTab, setActiveTab, activeBatchCount = 0 }) {
+export default function Header({ activeTab, setActiveTab, activeBatchCount = 0, onStartTour }) {
   const { mode, toggleMode, t } = useTerminology();
   const [isMuted, setIsMuted] = useState(false);
   const [isSteaming, setIsSteaming] = useState(false);
@@ -66,6 +69,16 @@ export default function Header({ activeTab, setActiveTab, activeBatchCount = 0 }
         </div>
 
         <div className="flex items-center space-x-3">
+          {/* App Tour Launch Button */}
+          <button
+            onClick={onStartTour}
+            title="Launch Interactive App Onboarding Tour"
+            className="flex items-center space-x-1.5 px-2.5 py-0.5 rounded border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/25 text-cyan-300 font-mono-tabular text-[11px] transition shadow-sm"
+          >
+            <Compass className="w-3 h-3 text-cyan-400 animate-spin-slow" />
+            <span>App Tour</span>
+          </button>
+
           {/* Industrial Hazard Pneumatic Purge Button */}
           <div className="relative">
             <button
@@ -125,7 +138,7 @@ export default function Header({ activeTab, setActiveTab, activeBatchCount = 0 }
         {/* Left: Brand Identity & Vessel Status */}
         <div 
           className="flex items-center space-x-3 cursor-pointer group"
-          onClick={() => setActiveTab('catalog')}
+          onClick={() => setActiveTab('ai_brew')}
         >
           {/* Glowing Reactor Emblem */}
           <div className="relative w-10 h-10 rounded-lg bg-gradient-to-b from-[#1A2332] to-[#0A0E17] p-1 border border-cyan-500/30 group-hover:border-cyan-400/60 shadow-[0_0_15px_rgba(0,240,255,0.25)] flex items-center justify-center transition">
@@ -190,43 +203,61 @@ export default function Header({ activeTab, setActiveTab, activeBatchCount = 0 }
         </div>
 
         {/* Right: Hardware Bank Switches (Module Navigation) */}
-        <nav className="flex items-center space-x-1 hw-well p-1 rounded-lg border border-white/10">
+        <nav className="flex items-center space-x-1 hw-well p-1 rounded-lg border border-white/10 overflow-x-auto">
+          {/* 01: AI BREWMASTER */}
+          <button
+            onClick={() => setActiveTab('ai_brew')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative shrink-0 ${
+              activeTab === 'ai_brew'
+                ? 'bg-[#182030] text-cyan-200 border-t-2 border-[var(--mode-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] font-semibold'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            }`}
+          >
+            <span className="text-[10px] text-cyan-400 font-bold">01</span>
+            <Bot className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="tracking-wide">AI BREW</span>
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          </button>
+
+          {/* 02: CATALOG */}
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative shrink-0 ${
               activeTab === 'catalog'
                 ? 'bg-[#182030] text-cyan-200 border-t-2 border-[var(--mode-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
-            <span className="text-[10px] text-slate-500 font-bold">01</span>
+            <span className="text-[10px] text-slate-500 font-bold">02</span>
             <Layers className="w-3.5 h-3.5" />
             <span className="tracking-wide">CATALOG</span>
             <span className="px-1 py-0.2 rounded bg-black/50 text-[10px] text-cyan-300 font-mono-tabular">23</span>
           </button>
 
+          {/* 03: SIMULATOR */}
           <button
             onClick={() => setActiveTab('simulator')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative shrink-0 ${
               activeTab === 'simulator'
                 ? 'bg-[#182030] text-cyan-200 border-t-2 border-[var(--mode-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
-            <span className="text-[10px] text-slate-500 font-bold">02</span>
+            <span className="text-[10px] text-slate-500 font-bold">03</span>
             <FlaskConical className="w-3.5 h-3.5" />
             <span className="tracking-wide">SIMULATOR</span>
           </button>
 
+          {/* 04: τ-TRACKER */}
           <button
             onClick={() => setActiveTab('tracker')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative shrink-0 ${
               activeTab === 'tracker'
                 ? 'bg-[#182030] text-cyan-200 border-t-2 border-[var(--mode-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
-            <span className="text-[10px] text-slate-500 font-bold">03</span>
+            <span className="text-[10px] text-slate-500 font-bold">04</span>
             <Timer className="w-3.5 h-3.5" />
             <span className="tracking-wide">&tau;-TRACKER</span>
             {activeBatchCount > 0 && (
@@ -234,15 +265,16 @@ export default function Header({ activeTab, setActiveTab, activeBatchCount = 0 }
             )}
           </button>
 
+          {/* 05: CODEX */}
           <button
             onClick={() => setActiveTab('codex')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative ${
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-mono-tabular transition relative shrink-0 ${
               activeTab === 'codex'
                 ? 'bg-[#182030] text-cyan-200 border-t-2 border-[var(--mode-accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] font-semibold'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
-            <span className="text-[10px] text-slate-500 font-bold">04</span>
+            <span className="text-[10px] text-slate-500 font-bold">05</span>
             <BookOpen className="w-3.5 h-3.5" />
             <span className="tracking-wide">CODEX</span>
           </button>

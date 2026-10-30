@@ -75,7 +75,7 @@ export default function CodexGuide() {
     }
   ];
 
-  const filteredEntries = LEXICON_ENTRIES.filter(entry => 
+  const filteredEntries = LEXICON_ENTRIES.filter(entry =>
     !searchTerm ||
     entry.parameter.toLowerCase().includes(searchTerm.toLowerCase()) ||
     entry.biophysics.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,7 +186,7 @@ export default function CodexGuide() {
             <code>v = 2 &bull; r&sup2; &bull; (&rho;_p - &rho;_f) &bull; g / (9 &bull; &eta;)</code>
           </div>
           <p className="text-slate-400 leading-relaxed font-sans text-xs">
-            Dense, scarred G₀/G₁ mother cells and bitter hop polyphenols settle 3.5&times; faster than tiny, unscarred G₄ virgin daughters. This allows the brewer to cleanly decant mothers into the dock while keeping daughters in suspension.
+            Dense, scarred G₀/G₁ mother cells and bitter hop polyphenols settle 3.5&times; faster than tiny, unscarred G₄   daughters. This allows the brewer to cleanly decant mothers into the dock while keeping daughters in suspension.
           </p>
         </div>
 

@@ -3,35 +3,39 @@ import { useTerminology } from '../context/TerminologyContext';
 import { MASTER_KITS } from '../data/kits';
 import { simulateFermentation } from '../utils/physicsEngine';
 import VesselCrossSection from './VesselCrossSection';
-import { 
-  AreaChart, 
-  Area, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ReferenceLine,
-  ResponsiveContainer 
+  ResponsiveContainer
 } from 'recharts';
-import { 
-  Sliders, 
-  Thermometer, 
-  Wind, 
-  ShieldCheck, 
-  AlertOctagon, 
-  Clock, 
-  Snowflake, 
-  Activity, 
-  Zap, 
-  Heart, 
+import {
+  Sliders,
+  Thermometer,
+  Wind,
+  ShieldCheck,
+  AlertOctagon,
+  Clock,
+  Snowflake,
+  Activity,
+  Zap,
+  Heart,
   Award,
   Layers,
   Sparkles,
   Info,
   Beaker,
-  Check
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Play,
+  RotateCcw
 } from 'lucide-react';
 
 export default function DynastySimulator({ initialKit, customKits = [], onPitchBatch }) {
@@ -48,6 +52,12 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
   const [conicalInstalled, setConicalInstalled] = useState(true);
   const [undockTau, setUndockTau] = useState(1.15);
   const [fridgeHours, setFridgeHours] = useState(84);
+
+  // Progressive Disclosure: Toggle for Advanced Biophysics Controls
+  const [showAdvancedControls, setShowAdvancedControls] = useState(false);
+
+  // Interactive 4D Biological Timeline Scrubber State (0.0 to 2.6: 0.0-1.6 tau, 1.6-2.6 fridge days)
+  const [scrubbedTimeline, setScrubbedTimeline] = useState(1.15);
 
   // Active Sub-View Tab: 'dynasty' | 'metabolic' | 'vessel' | 'soma'
   const [activeSubView, setActiveSubView] = useState('dynasty');
@@ -68,6 +78,50 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
     });
   }, [selectedKit, tempF, airPocketMl, aerationProtocol, shake90Min, conicalInstalled, undockTau, fridgeHours]);
 
+  // Compute instantaneous real-time metrics for the scrubbed point along the timeline
+  const scrubbedMetrics = useMemo(() => {
+    const tau = scrubbedTimeline;
+    const isFridge = tau > 1.6;
+    const fridgeDay = isFridge ? Math.round((tau - 1.6) / 0.2) : 0;
+
+    // Fermentation attenuation progress (0.0 to 1.0)
+    let progress = 0;
+    if (tau <= 1.0) {
+      progress = Math.pow(tau / 1.0, 1.3) * 0.90; // 90% consumed by 1.0 tau
+    } else if (tau <= 1.6) {
+      progress = 0.90 + ((tau - 1.0) / 0.6) * 0.10; // finishes secondary
+    } else {
+      progress = 1.0;
+    }
+
+    const maxAbv = selectedKit.abv || 6.2;
+    const currentAbv = Number((maxAbv * progress).toFixed(1));
+    const currentSg = Number((1.055 - progress * 0.043).toFixed(3));
+    const pressurePsi = tau < 0.2 ? Math.round(tau * 40) : 15;
+    const activeDaughters = tau <= 0.4
+      ? Math.round(tau * 45)
+      : Math.round(Math.min(32, 18 + tau * 10));
+
+    let phaseName = '0.0τ Pitch Point';
+    if (tau > 0.0 && tau < 0.4) phaseName = 'Early Aerobic Budding';
+    else if (tau >= 0.4 && tau < 0.8) phaseName = 'Peak Primary & Krausen Crest';
+    else if (tau >= 0.8 && tau < 1.05) phaseName = '1.00τ Metabolic Horizon (Quiet Hiss)';
+    else if (tau >= 1.05 && tau <= 1.35) phaseName = 'Daughter Polish Rest Window';
+    else if (tau > 1.35 && tau <= 1.6) phaseName = 'Terminal Secondary Conditioning';
+    else if (isFridge) phaseName = `Cold Conditioning (Fridge Day ${fridgeDay})`;
+
+    return {
+      tau,
+      isFridge,
+      fridgeDay,
+      currentAbv,
+      currentSg,
+      pressurePsi,
+      activeDaughters,
+      phaseName
+    };
+  }, [scrubbedTimeline, selectedKit]);
+
   // Preset Shortcuts
   const applyPreset = (preset) => {
     if (preset === 'soma_max') {
@@ -77,17 +131,20 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
       setConicalInstalled(true);
       setFridgeHours(84);
       setAirPocketMl(1200);
+      setScrubbedTimeline(1.15);
     } else if (preset === 'crowd_harmonic') {
       setUndockTau(1.30);
       setAerationProtocol('standard');
       setShake90Min(false);
       setConicalInstalled(true);
       setFridgeHours(120);
+      setScrubbedTimeline(1.30);
     } else if (preset === 'accidental_yeast_bomb') {
       setConicalInstalled(false); // Missing funnel
       setAirPocketMl(750); // Low headspace
       setUndockTau(0.90);  // Premature undock
       setFridgeHours(24);   // Barely chilled
+      setScrubbedTimeline(0.90);
     }
   };
 
@@ -160,19 +217,19 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
 
       {/* Split-Screen Flight Deck (12 Cols: 4 Cols Fader Rack + 8 Cols Display) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left Column (4 Cols): The 7-Channel Hardware Fader Rack */}
+        {/* Left Column (4 Cols): The Streamlined Fader Rack with Progressive Disclosure */}
         <div className="lg:col-span-4 hw-panel p-4 space-y-4">
           <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
             <span className="font-mono-tabular text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center space-x-1.5">
               <Sliders className="w-4 h-4" />
-              <span>7-Channel Fader Rack</span>
+              <span>Core Telemetry Controls</span>
             </span>
             <span className="text-[10px] font-mono-tabular text-slate-500">
               TEENAGE_ENG_CONSOLE
             </span>
           </div>
 
-          <div className="space-y-3.5 text-xs font-mono-tabular">
+          <div className="space-y-3 text-xs font-mono-tabular">
             {/* CH.01 // BASELINE RECIPE */}
             <div className="hw-well p-3 rounded space-y-1.5">
               <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
@@ -218,104 +275,16 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
               <div className="flex justify-between text-[9px] text-slate-500">
                 <span>60°F [SLOW_STOKES]</span>
                 <span className="text-amber-400 font-semibold">72°F [OPTIMAL]</span>
-                <span>82°F [RAPID]</span>
+                <span>82°F [FUSEL_RISK]</span>
               </div>
             </div>
 
-            {/* CH.03 // HEADSPACE AIR POCKET */}
-            <div className="hw-well p-3 rounded space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
-                  <Wind className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>CH.03 // {mode === 'biophysics' ? 'AIR POCKET (V_air)' : 'HEADSPACE SKY'}</span>
-                </span>
-                <span className={`px-2 py-0.5 rounded hw-well font-bold border ${airPocketMl < 820 ? 'text-rose-400 border-rose-500/50 animate-pulse' : 'text-cyan-300 border-cyan-500/30'}`}>
-                  {airPocketMl.toLocaleString()} mL
-                </span>
-              </div>
-              <input
-                type="range"
-                min="300"
-                max="1600"
-                step="50"
-                value={airPocketMl}
-                onChange={(e) => setAirPocketMl(parseInt(e.target.value, 10))}
-                className="hw-fader"
-              />
-              <div className="flex justify-between text-[9px] text-slate-500">
-                <span className="text-rose-400 font-semibold">300mL (&lt;820 BLOWOUT)</span>
-                <span className="text-cyan-400 font-semibold">1,200mL [STD]</span>
-                <span>1,600mL</span>
-              </div>
-            </div>
-
-            {/* CH.04 // AERATION & AGITATION PROTOCOL */}
-            <div className="hw-well p-3 rounded space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-                <span>CH.04 // AERATION DISSOLUTION</span>
-                <span className="text-cyan-400 font-bold">HENRY_LAW</span>
-              </div>
-              <select
-                value={aerationProtocol}
-                onChange={(e) => setAerationProtocol(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded hw-well border border-white/10 text-white font-mono-tabular text-xs focus:border-cyan-400 outline-none"
-              >
-                <option value="gentle" className="bg-[#0B0E14]">Gentle 30s Swirl (+12 mg O₂)</option>
-                <option value="standard" className="bg-[#0B0E14]">Standard 2-Min Shake (+32 mg O₂)</option>
-                <option value="dual_vector" className="bg-[#0B0E14]">Dual-Vector Shake (+48 mg O₂)</option>
-              </select>
-              <label className="flex items-center space-x-2 pt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={shake90Min}
-                  onChange={(e) => setShake90Min(e.target.checked)}
-                  className="rounded accent-cyan-400 cursor-pointer"
-                />
-                <span className="text-[10px] text-slate-300">
-                  +90m Post-Pitch Agitation Pulse (+18% O₂)
-                </span>
-              </label>
-            </div>
-
-            {/* CH.05 // CONICAL FUNNEL SAFETY SWITCH */}
-            <div className="hw-well p-3 rounded space-y-2">
-              <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
-                <span>CH.05 // CONICAL TRUB FUNNEL</span>
-                <span className={conicalInstalled ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                  {conicalInstalled ? 'LOCKED' : 'ALERT'}
-                </span>
-              </div>
-              <button
-                onClick={() => setConicalInstalled(!conicalInstalled)}
-                className={`w-full py-2 px-3 rounded font-bold font-mono-tabular text-xs transition flex items-center justify-center space-x-2 shadow-sm ${
-                  conicalInstalled
-                    ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
-                    : 'bg-rose-950/90 border border-rose-500 text-rose-200 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.35)]'
-                }`}
-              >
-                {conicalInstalled ? (
-                  <>
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    <span>[ CONICAL FUNNEL: LOCKED ]</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertOctagon className="w-4 h-4 text-rose-400" />
-                    <span>[ CONICAL MISSING: YEAST BOMB ]</span>
-                  </>
-                )}
-              </button>
-              <div className="text-[10px] text-slate-500 text-center">
-                {conicalInstalled ? '✓ 92% mother/trub cells cleanly isolated in dock' : '⚠️ 75% mother cells resuspended into liquid'}
-              </div>
-            </div>
-
-            {/* CH.06 // UNDOCK BIOLOGICAL TIME */}
+            {/* CH.03 // UNDOCKING TIMING */}
             <div className="hw-well p-3 rounded space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
                   <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>CH.06 // UNDOCK TIME (&tau;_undock)</span>
+                  <span>CH.03 // {mode === 'biophysics' ? 'UNDOCK COORDINATE' : 'DROP THE DOCK'}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded hw-well text-cyan-300 font-bold border border-cyan-500/30">
                   {undockTau.toFixed(2)} &tau;
@@ -327,25 +296,29 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                 max="1.60"
                 step="0.05"
                 value={undockTau}
-                onChange={(e) => setUndockTau(parseFloat(e.target.value))}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setUndockTau(val);
+                  setScrubbedTimeline(val);
+                }}
                 className="hw-fader"
               />
               <div className="flex justify-between text-[9px] text-slate-500">
-                <span className="text-rose-400">0.80&tau; [ROUGH]</span>
+                <span>0.80&tau; [PREMATURE]</span>
                 <span className="text-cyan-400 font-semibold">1.15&tau; [SOMA_MAX]</span>
-                <span>1.40&tau; [CRISP]</span>
+                <span>1.60&tau; [CLEAR]</span>
               </div>
             </div>
 
-            {/* CH.07 // FRIDGE COLD LOCK */}
+            {/* CH.04 // COLD LOCK FRIDGE HOURS */}
             <div className="hw-well p-3 rounded space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
                   <Snowflake className="w-3.5 h-3.5 text-blue-400" />
-                  <span>CH.07 // {mode === 'biophysics' ? 'STOKES COLD LOCK (38°F)' : 'FRIDGE CHILL'}</span>
+                  <span>CH.04 // {mode === 'biophysics' ? 'STOKES-HENRY COLD LOCK' : 'FRIDGE HOURS'}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded hw-well text-blue-300 font-bold border border-blue-500/30">
-                  {fridgeHours} hrs
+                  {fridgeHours}h ({(fridgeHours / 24).toFixed(1)}d)
                 </span>
               </div>
               <input
@@ -363,63 +336,215 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                 <span>168h [7d LAGER]</span>
               </div>
             </div>
+
+            {/* PROGRESSIVE DISCLOSURE TOGGLE: ADVANCED BIOPHYSICS PARAMETERS */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedControls(!showAdvancedControls)}
+                className="w-full py-2 px-3 rounded-md hw-well border border-white/10 hover:border-cyan-500/40 text-slate-300 hover:text-white flex items-center justify-between text-[11px] font-mono-tabular transition"
+              >
+                <span className="flex items-center space-x-2">
+                  <Beaker className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Advanced Biophysics Controls (4)</span>
+                </span>
+                {showAdvancedControls ? (
+                  <ChevronUp className="w-4 h-4 text-cyan-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                )}
+              </button>
+
+              {/* Collapsible Advanced Parameters */}
+              {showAdvancedControls && (
+                <div className="mt-3 space-y-3 pt-1 border-t border-white/10 animate-fade-in">
+                  {/* ADV.01 // HEADSPACE AIR POCKET */}
+                  <div className="hw-well p-3 rounded space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
+                        <Wind className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>HEADSPACE POCKET (AIR_ML)</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded hw-well text-cyan-300 font-bold border border-cyan-500/30">
+                        {airPocketMl} mL
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="600"
+                      max="1600"
+                      step="50"
+                      value={airPocketMl}
+                      onChange={(e) => setAirPocketMl(parseInt(e.target.value, 10))}
+                      className="hw-fader"
+                    />
+                    <div className="flex justify-between text-[9px] text-slate-500">
+                      <span className="text-rose-400">600 mL [BLOWOUT]</span>
+                      <span className="text-cyan-400 font-semibold">1,200 mL [STD]</span>
+                      <span>1,600 mL [HIGH_O2]</span>
+                    </div>
+                  </div>
+
+                  {/* ADV.02 // AERATION PROTOCOL */}
+                  <div className="hw-well p-3 rounded space-y-1.5">
+                    <span className="text-slate-400 text-[10px] uppercase block">
+                      AERATION AGITATION PROTOCOL
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: 'gentle', label: 'Gentle (30s)' },
+                        { id: 'standard', label: 'Standard (2m)' },
+                        { id: 'dual_vector', label: 'Dual-Vector' }
+                      ].map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => setAerationProtocol(p.id)}
+                          className={`p-1.5 rounded text-[10px] font-mono-tabular border transition ${aerationProtocol === p.id
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 font-bold'
+                              : 'hw-well text-slate-400 border-white/5 hover:text-white'
+                            }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ADV.03 // 90-MIN POST-PITCH SWIRL */}
+                  <div className="hw-well p-3 rounded flex items-center justify-between">
+                    <div>
+                      <span className="text-white font-medium block text-xs">90-Min Post-Pitch Swirl</span>
+                      <span className="text-[10px] text-slate-400 block">+14% Replicative Gn Transfer</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShake90Min(!shake90Min)}
+                      className={`px-3 py-1 rounded text-xs font-mono-tabular border font-bold transition ${shake90Min
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                          : 'hw-well text-slate-500 border-white/10'
+                        }`}
+                    >
+                      {shake90Min ? 'ACTIVE' : 'OFF'}
+                    </button>
+                  </div>
+
+                  {/* ADV.04 // CONICAL TRUB FUNNEL */}
+                  <div className="hw-well p-3 rounded flex items-center justify-between">
+                    <div>
+                      <span className="text-white font-medium block text-xs">Conical Funnel Installed</span>
+                      <span className="text-[10px] text-slate-400 block">Strips 92% mother trub</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConicalInstalled(!conicalInstalled)}
+                      className={`px-3 py-1 rounded text-xs font-mono-tabular border font-bold transition ${conicalInstalled
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                          : 'bg-rose-950/40 text-rose-300 border-rose-500/60'
+                        }`}
+                    >
+                      {conicalInstalled ? 'LOCKED ✓' : 'MISSING ⚠️'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Right Column (8 Cols): 4-Quadrant Telemetry Display & CAD Vessel */}
+        {/* Right Column (8 Cols): 4D Phase Scrubber, Telemetry & Sub-Views */}
         <div className="lg:col-span-8 space-y-4">
-          {/* Live Top Telemetry Ribbon (4 KPI Readout Modules in .hw-well boxes) */}
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 text-xs font-mono-tabular">
-            {/* KPI 1: 1.00 Tau Horizon */}
-            <div className="hw-well p-3 rounded border border-white/5 space-y-1">
-              <span className="text-slate-400 block text-[10px] uppercase">
-                {mode === 'biophysics' ? '1.00 τ Horizon' : 'Full Breath (1.00 τ)'}
-              </span>
-              <span className="text-xl font-bold text-white block">
-                ~{Math.round(selectedKit.baseTau * (72 / tempF))} hrs
-              </span>
-              <span className="text-[10px] text-slate-500 block truncate">
-                Arrhenius-scaled @ {tempF}°F
-              </span>
+          {/* THE 4D FERMENTATION PHASE SCRUBBER (SOUPED-UP VIZ HUD) */}
+          <div className="hw-panel p-4 space-y-3 border-cyan-500/30 shadow-[0_0_20px_rgba(0,240,255,0.12)]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                <span className="font-mono-tabular text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+                  <Zap className="w-4 h-4 text-cyan-400" />
+                  <span>4D Biological Time Scrubber</span>
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono-tabular bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  {scrubbedMetrics.phaseName}
+                </span>
+              </div>
+
+              {/* Preset Scrub Points */}
+              <div className="flex items-center space-x-1 text-[10px] font-mono-tabular">
+                <button
+                  onClick={() => setScrubbedTimeline(0.0)}
+                  className="px-2 py-0.5 rounded hw-well border border-white/10 hover:border-cyan-400 text-slate-300 transition"
+                >
+                  0.0τ Pitch
+                </button>
+                <button
+                  onClick={() => setScrubbedTimeline(0.6)}
+                  className="px-2 py-0.5 rounded hw-well border border-white/10 hover:border-cyan-400 text-slate-300 transition"
+                >
+                  0.6τ Krausen
+                </button>
+                <button
+                  onClick={() => setScrubbedTimeline(1.0)}
+                  className="px-2 py-0.5 rounded hw-well border border-white/10 hover:border-cyan-400 text-slate-300 transition"
+                >
+                  1.0τ Horizon
+                </button>
+                <button
+                  onClick={() => setScrubbedTimeline(1.25)}
+                  className="px-2 py-0.5 rounded hw-well border border-white/10 hover:border-cyan-400 text-slate-300 transition"
+                >
+                  1.25τ Polish
+                </button>
+                <button
+                  onClick={() => setScrubbedTimeline(2.3)}
+                  className="px-2 py-0.5 rounded hw-well border border-white/10 hover:border-cyan-400 text-slate-300 transition"
+                >
+                  ❄️ Cold Lock
+                </button>
+              </div>
             </div>
 
-            {/* KPI 2: Live G4 Daughters */}
-            <div className="hw-well p-3 rounded border border-amber-500/30 space-y-1">
-              <span className="text-amber-400 block text-[10px] uppercase font-bold">
-                Live G4 Daughters
-              </span>
-              <span className="text-xl font-bold text-amber-300 block">
-                {simulation.nutrition.suspendedG4PerPint} Billion
-              </span>
-              <span className="text-[10px] text-slate-500 block truncate">
-                Per 500 mL pint (0-bud-scar)
-              </span>
+            {/* Interactive Timeline Fader */}
+            <div className="space-y-1">
+              <input
+                type="range"
+                min="0.0"
+                max="2.6"
+                step="0.05"
+                value={scrubbedTimeline}
+                onChange={(e) => setScrubbedTimeline(parseFloat(e.target.value))}
+                className="hw-fader h-3"
+              />
+              <div className="flex justify-between text-[9px] font-mono-tabular text-slate-500 pt-0.5">
+                <span>0.0τ [Pitch Point]</span>
+                <span className="text-amber-400">1.0τ [Horizon]</span>
+                <span className="text-cyan-400">1.25τ [Polish Undock]</span>
+                <span className="text-blue-400">Fridge D1 &rarr; D5 [Cold Lock]</span>
+              </div>
             </div>
 
-            {/* KPI 3: Bioavailable O2 & Gn */}
-            <div className="hw-well p-3 rounded border border-cyan-500/30 space-y-1">
-              <span className="text-cyan-400 block text-[10px] uppercase font-bold">
-                Effective O₂ &amp; Gn
-              </span>
-              <span className="text-xl font-bold text-cyan-300 block">
-                Gn = {simulation.physics.Gn}
-              </span>
-              <span className="text-[10px] text-slate-500 block truncate">
-                ~{simulation.physics.effectiveO2TransferredMg} mg O₂ transferred
-              </span>
-            </div>
-
-            {/* KPI 4: Soma-Index & KCAL */}
-            <div className="hw-well p-3 rounded border border-emerald-500/30 space-y-1">
-              <span className="text-emerald-400 block text-[10px] uppercase font-bold">
-                Soma-Index &amp; Kcal
-              </span>
-              <span className="text-xl font-bold text-emerald-300 block">
-                &Phi; {simulation.scores.buzz} // {simulation.nutrition.totalPintCalories} kcal
-              </span>
-              <span className="text-[10px] text-slate-500 block truncate">
-                +{simulation.nutrition.yeastKcalPerPint} yeast kcal per pint
-              </span>
+            {/* Real-Time Telemetry HUD updating with scrubber */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 text-xs font-mono-tabular">
+              <div className="hw-well p-2 rounded">
+                <span className="text-[10px] text-slate-500 block uppercase">Gravity SG</span>
+                <span className="font-bold text-white text-sm">{scrubbedMetrics.currentSg}</span>
+              </div>
+              <div className="hw-well p-2 rounded">
+                <span className="text-[10px] text-slate-500 block uppercase">Current ABV</span>
+                <span className="font-bold text-cyan-300 text-sm">{scrubbedMetrics.currentAbv}%</span>
+              </div>
+              <div className="hw-well p-2 rounded">
+                <span className="text-[10px] text-slate-500 block uppercase">Headspace PSI</span>
+                <span className="font-bold text-amber-300 text-sm">{scrubbedMetrics.pressurePsi} PSI</span>
+              </div>
+              <div className="hw-well p-2 rounded">
+                <span className="text-[10px] text-slate-500 block uppercase">Live G4 Daughters</span>
+                <span className="font-bold text-emerald-300 text-sm">{scrubbedMetrics.activeDaughters} B/pint</span>
+              </div>
+              <div className="hw-well p-2 rounded col-span-2 sm:col-span-1">
+                <span className="text-[10px] text-slate-500 block uppercase">Diacetyl Status</span>
+                <span className="font-bold text-purple-300 text-sm">
+                  {scrubbedTimeline < 0.8 ? 'Accumulating' : scrubbedTimeline <= 1.25 ? 'Clearing (-55%)' : 'Locked & Polished'}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -427,11 +552,10 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
           <div className="hw-panel p-1.5 flex items-center space-x-1.5 overflow-x-auto text-xs font-mono-tabular">
             <button
               onClick={() => setActiveSubView('dynasty')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
-                activeSubView === 'dynasty'
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${activeSubView === 'dynasty'
                   ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Layers className="w-3.5 h-3.5" />
               <span>VIEW A: DYNASTY &amp; SETTLING (G₀ &rarr; G₄)</span>
@@ -439,11 +563,10 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
 
             <button
               onClick={() => setActiveSubView('metabolic')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
-                activeSubView === 'metabolic'
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${activeSubView === 'metabolic'
                   ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Activity className="w-3.5 h-3.5" />
               <span>VIEW B: METABOLIC IMPRINT</span>
@@ -451,11 +574,10 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
 
             <button
               onClick={() => setActiveSubView('vessel')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
-                activeSubView === 'vessel'
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${activeSubView === 'vessel'
                   ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Zap className="w-3.5 h-3.5" />
               <span>VIEW C: CAD PINTER CUTAWAY</span>
@@ -463,11 +585,10 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
 
             <button
               onClick={() => setActiveSubView('soma')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
-                activeSubView === 'soma'
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${activeSubView === 'soma'
                   ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
-              }`}
+                }`}
             >
               <Heart className="w-3.5 h-3.5" />
               <span>VIEW D: SOMA-CARD NUTRITION</span>
@@ -490,7 +611,7 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                       </span>
                     </h4>
                     <p className="text-xs text-slate-400 font-mono-tabular mt-0.5">
-                      Gn = <strong className="text-cyan-300">{simulation.physics.Gn}</strong> generations 
+                      Gn = <strong className="text-cyan-300">{simulation.physics.Gn}</strong> generations
                       yields ~<strong className="text-yellow-300">{simulation.nutrition.suspendedG4PerPint} Billion</strong> live G₄ daughter cells suspended per pint.
                     </p>
                   </div>
@@ -512,12 +633,12 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                     <AreaChart data={simulation.charts.timeSeriesDynasty}>
                       <defs>
                         <linearGradient id="g4GradOverhaul" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F5B041" stopOpacity={0.85}/>
-                          <stop offset="95%" stopColor="#F5B041" stopOpacity={0.05}/>
+                          <stop offset="5%" stopColor="#F5B041" stopOpacity={0.85} />
+                          <stop offset="95%" stopColor="#F5B041" stopOpacity={0.05} />
                         </linearGradient>
                         <linearGradient id="motherGradOverhaul" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.85}/>
-                          <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.05}/>
+                          <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.85} />
+                          <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.05} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
@@ -552,7 +673,7 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                   <p className="leading-relaxed">
                     {conicalInstalled ? (
                       <>
-                        With the <strong>Conical Funnel LOCKED</strong>, dense scarred G₀/G₁ mother cells and heavy hop polyphenols slip down the steep 45° funnel walls into the Brewing Dock during the first 1.0&tau; of primary fermentation. Undocking cleanly eliminates 92% of harsh tannins, leaving vibrant, unscarred G₄ virgin daughters suspended in the beer to reabsorb diacetyl and synthesize bioavailable glutathione.
+                        With the <strong>Conical Funnel LOCKED</strong>, dense scarred G₀/G₁ mother cells and heavy hop polyphenols slip down the steep 45° funnel walls into the Brewing Dock during the first 1.0&tau; of primary fermentation. Undocking cleanly eliminates 92% of harsh tannins, leaving vibrant, unscarred G₄   daughters suspended in the beer to reabsorb diacetyl and synthesize bioavailable glutathione.
                       </>
                     ) : (
                       <span className="text-rose-300">
@@ -578,8 +699,8 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                       </span>
                     </h4>
                     <p className="text-xs text-slate-400 font-mono-tabular mt-0.5">
-                      Diacetyl Cushion: <strong className="text-amber-400">{simulation.scores.dc}/10</strong> | 
-                      Acetaldehyde Snap: <strong className="text-emerald-400">{simulation.scores.as}/10</strong> | 
+                      Diacetyl Cushion: <strong className="text-amber-400">{simulation.scores.dc}/10</strong> |
+                      Acetaldehyde Snap: <strong className="text-emerald-400">{simulation.scores.as}/10</strong> |
                       Terpene Lift: <strong className="text-purple-400">{simulation.scores.aroma}/10</strong>
                     </p>
                   </div>
@@ -629,9 +750,9 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
               </div>
             )}
 
-            {/* VIEW C: INTERACTIVE CAD VESSEL CUTAWAY */}
+            {/* VIEW C: INTERACTIVE CAD VESSEL CUTAWAY (WITH TIMELINE SCRUB REACTIVITY) */}
             {activeSubView === 'vessel' && (
-              <VesselCrossSection simulationData={simulation} />
+              <VesselCrossSection simulationData={simulation} scrubbedTau={scrubbedTimeline} />
             )}
 
             {/* VIEW D: LIVE 500mL PINT NUTRITION & SOMA-CARD */}
@@ -682,7 +803,7 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                       {simulation.nutrition.suspendedG4PerPint} B
                     </span>
                     <p className="text-[10px] text-slate-500 pt-1 border-t border-white/5">
-                      Billions of unscarred virgin daughter cells with smooth, unoxidized lipid membranes.
+                      Billions of unscarred   daughter cells with smooth, unoxidized lipid membranes.
                     </p>
                   </div>
 
@@ -721,16 +842,16 @@ export default function DynastySimulator({ initialKit, customKits = [], onPitchB
                   <p className="text-xs text-slate-300 leading-relaxed font-sans">
                     {mode === 'biophysics' ? (
                       <>
-                        At <strong>{tempF}&deg;F</strong> ambient temperature and an undock biological coordinate of <strong>{undockTau.toFixed(2)}&tau;</strong>, this batch achieves a <strong>Gn replicative factor of {simulation.physics.Gn}</strong>. 
+                        At <strong>{tempF}&deg;F</strong> ambient temperature and an undock biological coordinate of <strong>{undockTau.toFixed(2)}&tau;</strong>, this batch achieves a <strong>Gn replicative factor of {simulation.physics.Gn}</strong>.
                         {conicalInstalled ? (
-                          ` The conical filter effectively sequesters 92% of chitin-scarred mother cells into the dock. Suspended virgin daughter cells yield a low diacetyl cushion (Dc ${simulation.scores.dc}/10) with elevated glutathione (${simulation.nutrition.gshMgPerPint} mg GSH) buffering ethanol toxicity. Carbonic velocity is rated at ${simulation.scores.carb}/10 with negligible phenolic drag.`
+                          ` The conical filter effectively sequesters 92% of chitin-scarred mother cells into the dock. Suspended   daughter cells yield a low diacetyl cushion (Dc ${simulation.scores.dc}/10) with elevated glutathione (${simulation.nutrition.gshMgPerPint} mg GSH) buffering ethanol toxicity. Carbonic velocity is rated at ${simulation.scores.carb}/10 with negligible phenolic drag.`
                         ) : (
                           ` CAUTION: With the conical funnel absent, backward shear carries 75% of trub back into the liquid, driving phenolic trub drag (PD ${simulation.scores.drag}/10) and masking hop terpenes.`
                         )}
                       </>
                     ) : (
                       <>
-                        Brewing this batch at a comfortable <strong>{tempF}&deg;F</strong> and letting the yeast breathe until <strong>{undockTau.toFixed(2)} breaths</strong> creates a remarkably vibrant pour. 
+                        Brewing this batch at a comfortable <strong>{tempF}&deg;F</strong> and letting the yeast breathe until <strong>{undockTau.toFixed(2)} breaths</strong> creates a remarkably vibrant pour.
                         {conicalInstalled ? (
                           ` Because your sludge guard funnel was in place, all the harsh hop grit stayed trapped in the dock. You get a heavenly velvet smoothie mouthfeel, soft butterscotch warmth without any throat burn, and a glowing, happy buzz with ${simulation.nutrition.bComplexPctDv}% of your daily B-vitamins.`
                         ) : (

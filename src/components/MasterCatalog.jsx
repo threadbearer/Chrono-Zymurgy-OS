@@ -24,7 +24,7 @@ import {
   Key
 } from 'lucide-react';
 
-export default function MasterCatalog({ onSelectForSimulator, onSelectForTracker, customKits = [], onSaveCustomKit }) {
+export default function MasterCatalog({ onSelectForSimulator, onSelectForTracker, onSelectForAI, customKits = [], onSaveCustomKit }) {
   const { mode, t } = useTerminology();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -258,64 +258,21 @@ export default function MasterCatalog({ onSelectForSimulator, onSelectForTracker
                   </div>
                 </div>
 
-                {/* 5-Axis Horizontal LED Segmented Progress Bars */}
-                <div className="mt-3 pt-2.5 border-t border-white/5 space-y-1.5 text-[10px] font-mono-tabular">
-                  {/* Axis 1: Silk */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 w-28 truncate">{t('axis_1', 'short')}</span>
-                    <div className="flex-1 mx-2 h-1.5 hw-well rounded overflow-hidden">
-                      <div className="h-full bg-cyan-400 transition-all duration-300" style={{ width: `${(kit.scores?.silk || 5) * 10}%` }}></div>
-                    </div>
-                    <span className="text-cyan-300 w-6 text-right font-bold">{kit.scores?.silk}</span>
+                {/* Streamlined Telemetry Strip (De-bloated & Scannable) */}
+                <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-mono-tabular">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-cyan-400 font-semibold">{t('axis_1', 'short')}: {kit.scores?.silk || 5}/10</span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-purple-300 font-semibold">{t('axis_3a', 'short')}: {kit.scores?.aroma || 7}/10</span>
                   </div>
 
-                  {/* Axis 2: Creamsicle / Diacetyl */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 w-28 truncate">{t('axis_2a', 'short')}</span>
-                    <div className="flex-1 mx-2 h-1.5 hw-well rounded overflow-hidden">
-                      <div className="h-full bg-amber-400 transition-all duration-300" style={{ width: `${(kit.scores?.dc || 3) * 10}%` }}></div>
-                    </div>
-                    <span className="text-amber-300 w-6 text-right font-bold">{kit.scores?.dc}</span>
-                  </div>
-
-                  {/* Axis 3: Terpene Aroma */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 w-28 truncate">{t('axis_3a', 'short')}</span>
-                    <div className="flex-1 mx-2 h-1.5 hw-well rounded overflow-hidden">
-                      <div className="h-full bg-purple-400 transition-all duration-300" style={{ width: `${(kit.scores?.aroma || 7) * 10}%` }}></div>
-                    </div>
-                    <span className="text-purple-300 w-6 text-right font-bold">{kit.scores?.aroma}</span>
-                  </div>
-
-                  {/* Axis 4: Carbonic Velocity */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 w-28 truncate">{t('axis_4', 'short')}</span>
-                    <div className="flex-1 mx-2 h-1.5 hw-well rounded overflow-hidden">
-                      <div className="h-full bg-blue-400 transition-all duration-300" style={{ width: `${(kit.scores?.carb || 7.5) * 10}%` }}></div>
-                    </div>
-                    <span className="text-blue-300 w-6 text-right font-bold">{kit.scores?.carb}</span>
-                  </div>
-
-                  {/* Axis 5: Golden Fuzzy Buzz */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 w-28 truncate">{t('axis_5', 'short')}</span>
-                    <div className="flex-1 mx-2 h-1.5 hw-well rounded overflow-hidden">
-                      <div className="h-full bg-yellow-400 transition-all duration-300" style={{ width: `${somaScore * 10}%` }}></div>
-                    </div>
-                    <span className="text-yellow-300 w-6 text-right font-bold">{somaScore}</span>
-                  </div>
-                </div>
-
-                {/* Financial Delta Readout Strip */}
-                <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono-tabular">
                   <div className="flex items-center space-x-1.5">
-                    <span className="text-slate-500 line-through">${kit.retailPrice.toFixed(2)}</span>
-                    <span className="text-slate-600">&rarr;</span>
+                    <span className="text-slate-500 line-through text-[10px]">${kit.retailPrice.toFixed(2)}</span>
                     <span className="text-emerald-400 font-bold">${kit.diyCost.toFixed(2)}</span>
+                    <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                      -{kitSavings.percent}%
+                    </span>
                   </div>
-                  <span className="hw-well px-2 py-0.5 rounded text-emerald-300 font-bold border border-emerald-500/30">
-                    [ -{kitSavings.percent}% COST DELTA ]
-                  </span>
                 </div>
               </div>
             );
@@ -350,6 +307,16 @@ export default function MasterCatalog({ onSelectForSimulator, onSelectForTracker
                 <Beaker className="w-3.5 h-3.5 text-cyan-400" />
                 <span>LOAD SIMULATOR &rarr;</span>
               </button>
+              {onSelectForAI && (
+                <button
+                  onClick={() => onSelectForAI(selectedKit)}
+                  className="hw-btn px-3 py-1.5 rounded text-amber-300 font-mono-tabular text-xs font-semibold flex items-center space-x-1.5 transition"
+                  title="Remix this recipe in AI Brewmaster"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>REMIX WITH AI</span>
+                </button>
+              )}
               <button
                 onClick={() => onSelectForTracker(selectedKit)}
                 className="px-3.5 py-1.5 rounded bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:from-amber-600 text-slate-950 font-bold text-xs font-mono-tabular flex items-center space-x-1.5 shadow-lg transition"

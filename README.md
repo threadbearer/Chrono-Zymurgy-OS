@@ -36,7 +36,7 @@ Instantly switches every metric badge, chart axis, tooltip, and report between:
   6. Undock Biological Time ($\tau_{\text{undock}}$: 0.80 $\tau$ to 1.60 $\tau$)
   7. Fridge Cold Lock ($\Delta t_{\text{phys}}$: 12 to 360 Hours at 38°F)
 - **4 Interactive Visual Sub-Views:**
-  - **View A:** Generational Dynasty & Settling Curve ($G_0 \rightarrow G_4$ Virgin Daughters vs Scarred Mothers/Trub).
+  - **View A:** Generational Dynasty & Settling Curve ($G_0 \rightarrow G_4$   Daughters vs Scarred Mothers/Trub).
   - **View B:** Metabolic Imprint & Botanical Vector ($D_c$, $A_s$, $T_L$, $P_D$).
   - **View C:** Live SVG Pinter Cross-Section with Henry's Law Headspace physics, 15 PSI pressure gauge, and **Flashing Red Valve Blowout Warning** if $V_{\text{air}} < 820\text{ mL}$.
   - **View D:** Live 500mL Pint Nutrition & Soma-Card (Total kcal, yeast kcal at $0.28\text{ kcal} / \text{Billion cells}$, live $G_4$ cells, B-complex % DV, active GSH mg).

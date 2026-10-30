@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTerminology } from '../context/TerminologyContext';
-import { AlertTriangle, ShieldCheck, Gauge, Wind, Zap } from 'lucide-react';
+import { AlertTriangle, ShieldCheck, Gauge, Wind, Zap, CheckCircle2 } from 'lucide-react';
 
-export default function VesselCrossSection({ simulationData }) {
+export default function VesselCrossSection({ simulationData, scrubbedTau = null }) {
   const { mode, t } = useTerminology();
   const { inputs, physics, scores } = simulationData;
 
@@ -10,12 +10,47 @@ export default function VesselCrossSection({ simulationData }) {
   const isConical = inputs.conicalInstalled;
   const isBlowout = physics.isBlowoutRisk;
 
-  // Liquid is fixed at 5,450 mL
+  // Active biological timeline stage (if scrubbedTau is provided, otherwise default to undockTau)
+  const currentTau = scrubbedTau !== null ? scrubbedTau : inputs.undockTau;
+  const isFridgePhase = currentTau > 1.6;
+  const fridgeDay = isFridgePhase ? Math.round((currentTau - 1.6) / 0.2) : 0;
+  const isUndockedAtThisPoint = currentTau >= inputs.undockTau;
+
+  // Dynamic Krausen Foam Height based on active tau phase:
+  // Krausen peaks between 0.40 and 0.75 tau, then collapses as horizon is reached
+  let foamMultiplier = 0.2;
+  if (currentTau < 0.2) {
+    foamMultiplier = 0.25;
+  } else if (currentTau <= 0.7) {
+    foamMultiplier = 0.5 + ((currentTau - 0.2) / 0.5) * 0.5; // reaches 1.0 peak
+  } else if (currentTau <= 1.0) {
+    foamMultiplier = 1.0 - ((currentTau - 0.7) / 0.3) * 0.65; // drops to 0.35
+  } else if (currentTau <= 1.25) {
+    foamMultiplier = 0.35 - ((currentTau - 1.0) / 0.25) * 0.25; // drops to 0.1
+  } else {
+    foamMultiplier = 0.05; // negligible foam during cold lock
+  }
+
   // Headspace air height varies with airPocket (from 300ml to 1600ml -> 30px to 95px)
   const headspaceHeight = Math.min(100, Math.max(30, (airPocket / 1600) * 95));
   // Krausen foam height
-  const krausenHeight = Math.min(headspaceHeight - 5, Math.max(15, (physics.krausenVolumeMl / 1600) * 95));
-  const foamCeilingGap = headspaceHeight - krausenHeight;
+  const maxKrausenH = Math.min(headspaceHeight - 5, Math.max(15, (physics.krausenVolumeMl / 1600) * 95));
+  const dynamicKrausenHeight = Math.max(8, maxKrausenH * foamMultiplier);
+  const foamCeilingGap = Math.round(headspaceHeight - dynamicKrausenHeight);
+
+  // Dynamic Trub accumulation in dock:
+  // Starts empty at 0.0 tau, fills to maximum by 1.0 tau
+  const trubAccumulation = Math.min(1.0, currentTau / 1.0);
+  const trubHeightPx = Math.round(trubAccumulation * 60);
+
+  // Dynamic Liquid Turbidity vs Clarity:
+  // Early wort is murky; cold lock clarifies to luminous liquid
+  const clarityPct = isFridgePhase
+    ? Math.min(1.0, 0.6 + (fridgeDay / 5) * 0.4)
+    : Math.max(0.1, (currentTau / 1.6) * 0.5);
+
+  // Active 15 PSI Valve emission state
+  const isActivelyVenting = currentTau >= 0.3 && currentTau <= 0.85;
 
   return (
     <div className="hw-panel p-5 space-y-4">
@@ -25,10 +60,14 @@ export default function VesselCrossSection({ simulationData }) {
           <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono-tabular">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
             <span className="uppercase tracking-widest font-semibold">CAD Bioreactor Cutaway // 6,650 mL Containment</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-amber-400 font-bold">
+              {isFridgePhase ? `COLD LOCK D${fridgeDay}` : `${currentTau.toFixed(2)} τ PHASE`}
+            </span>
           </div>
           <h4 className="text-base font-bold font-display text-white mt-0.5">
             {mode === 'biophysics'
-              ? 'Hydrodynamic Vessel Cross-Section & Henry Gas Diffusion'
+              ? 'Hydrodynamic Vessel Cross-Section & Stokes-Henry Kinetics'
               : 'Live Pinter Cutaway & Bubble Chamber'}
           </h4>
           <p className="text-xs text-slate-400 font-mono-tabular mt-0.5">
@@ -72,9 +111,9 @@ export default function VesselCrossSection({ simulationData }) {
         <svg viewBox="0 0 900 380" className="w-full h-auto max-h-[380px] select-none">
           <defs>
             <linearGradient id="liquidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#F5B041" stopOpacity="0.95" />
-              <stop offset="45%" stopColor="#E67E22" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#78350F" stopOpacity="1" />
+              <stop offset="0%" stopColor={isFridgePhase ? '#F5B041' : '#E67E22'} stopOpacity={0.95} />
+              <stop offset="45%" stopColor={isFridgePhase ? '#F59E0B' : '#D97706'} stopOpacity={0.95} />
+              <stop offset="100%" stopColor="#78350F" stopOpacity={1} />
             </linearGradient>
             <linearGradient id="foamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#FEF08A" stopOpacity="0.95" />
@@ -116,15 +155,15 @@ export default function VesselCrossSection({ simulationData }) {
           </g>
 
           {/* MAIN PINTER CHASSIS (Horizontal Barrel) */}
-          <rect 
-            x="240" 
-            y="60" 
-            width="520" 
-            height="260" 
-            rx="28" 
-            fill="#0B0E14" 
-            stroke="#2A384F" 
-            strokeWidth="4" 
+          <rect
+            x="240"
+            y="60"
+            width="520"
+            height="260"
+            rx="28"
+            fill="#0B0E14"
+            stroke="#2A384F"
+            strokeWidth="4"
           />
 
           {/* Tap / Spout Handle on Right */}
@@ -133,20 +172,42 @@ export default function VesselCrossSection({ simulationData }) {
           <text x="825" y="240" fontFamily="monospace" fontSize="10" fill="#94A3B8" textAnchor="middle">TAP VALVE</text>
 
           {/* BREWING DOCK (Attached at Left: 450 mL capacity) */}
-          <path 
-            d="M 115,80 L 240,80 L 240,300 L 115,300 A 30,110 0 0,1 115,80 Z" 
-            fill="#080C14" 
-            stroke="#3A4D6B" 
-            strokeWidth="3.5" 
-          />
-          <text x="175" y="72" fontFamily="monospace" fontSize="10" fontWeight="bold" fill="#00F0FF" textAnchor="middle">
-            BREWING DOCK (450 mL)
-          </text>
+          <g transform={isUndockedAtThisPoint ? "translate(-25, 0)" : "translate(0, 0)"} className="transition-transform duration-500">
+            <path
+              d="M 115,80 L 240,80 L 240,300 L 115,300 A 30,110 0 0,1 115,80 Z"
+              fill={isUndockedAtThisPoint ? "#05070A" : "#080C14"}
+              stroke={isUndockedAtThisPoint ? "#10B981" : "#3A4D6B"}
+              strokeWidth="3.5"
+            />
+            <text x="175" y="72" fontFamily="monospace" fontSize="10" fontWeight="bold" fill={isUndockedAtThisPoint ? "#10B981" : "#00F0FF"} textAnchor="middle">
+              {isUndockedAtThisPoint ? 'DOCK UNDOCKED ✓' : 'BREWING DOCK (450 mL)'}
+            </text>
+
+            {/* Trub Layer in Brewing Dock */}
+            {isConical ? (
+              <path
+                d={`M 120,${300 - trubHeightPx} Q 180,${290 - trubHeightPx} 235,${300 - trubHeightPx} L 235,295 A 25,25 0 0,1 210,300 L 130,300 A 20,20 0 0,1 120,280 Z`}
+                fill="url(#trubGrad)"
+                stroke="#78350F"
+                strokeWidth="2"
+              />
+            ) : (
+              <g>
+                <path
+                  d={`M 120,${300 - trubHeightPx} L 235,${300 - trubHeightPx} L 235,300 L 120,300 Z`}
+                  fill="url(#trubGrad)"
+                />
+                <path d="M 220,260 C 260,250 280,290 330,270" stroke="#F43F5E" strokeWidth="2.5" fill="none" />
+                <circle cx="280" cy="260" r="5" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
+                <circle cx="340" cy="275" r="6" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
+                <circle cx="390" cy="285" r="5" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
+              </g>
+            )}
+          </g>
 
           {/* CONICAL FUNNEL JUNCTION */}
           {isConical ? (
             <g>
-              {/* Steep 45-degree Conical walls directing trub cleanly down */}
               <polygon points="230,85 250,140 250,220 230,275" fill="#064E3B" stroke="#10B981" strokeWidth="3" />
               <line x1="240" y1="120" x2="240" y2="240" stroke="#34D399" strokeWidth="3" strokeDasharray="4 2" />
               <text x="240" y="48" fontFamily="monospace" fontSize="10" fontWeight="bold" fill="#34D399" textAnchor="middle">
@@ -155,7 +216,6 @@ export default function VesselCrossSection({ simulationData }) {
             </g>
           ) : (
             <g>
-              {/* Missing Funnel Gap with Red Alarm Barrier */}
               <line x1="240" y1="85" x2="240" y2="275" stroke="#F43F5E" strokeWidth="3" strokeDasharray="6 4" filter="url(#neonGlowRed)" />
               <text x="240" y="48" fontFamily="monospace" fontSize="10" fontWeight="bold" fill="#F43F5E" textAnchor="middle">
                 ⚠️ FUNNEL MISSING (RESUSPENSION RISK)
@@ -167,17 +227,18 @@ export default function VesselCrossSection({ simulationData }) {
           <path
             d="M 245,140 L 755,140 L 755,300 A 20,20 0 0,1 735,315 L 265,315 A 20,20 0 0,1 245,300 Z"
             fill="url(#liquidGrad)"
+            opacity={0.90 + clarityPct * 0.10}
           />
 
-          {/* Animated/Glowing Micro-particles: Golden G4 Virgin Daughters */}
-          <circle cx="310" cy="210" r="4" fill="#FEF08A" opacity="0.9" />
-          <circle cx="360" cy="180" r="3" fill="#FEF08A" opacity="0.8" />
-          <circle cx="410" cy="240" r="4.5" fill="#FEF08A" opacity="0.9" />
-          <circle cx="470" cy="190" r="3.5" fill="#FEF08A" opacity="0.75" />
-          <circle cx="530" cy="250" r="4" fill="#FEF08A" opacity="0.85" />
-          <circle cx="600" cy="205" r="3" fill="#FEF08A" opacity="0.8" />
-          <circle cx="670" cy="235" r="4.5" fill="#FEF08A" opacity="0.9" />
-          <circle cx="710" cy="180" r="3.5" fill="#FEF08A" opacity="0.7" />
+          {/* Animated G4   Daughters */}
+          <circle cx="310" cy="210" r="4" fill="#FEF08A" opacity={0.6 + clarityPct * 0.4} />
+          <circle cx="360" cy="180" r="3" fill="#FEF08A" opacity={0.5 + clarityPct * 0.5} />
+          <circle cx="410" cy="240" r="4.5" fill="#FEF08A" opacity={0.6 + clarityPct * 0.4} />
+          <circle cx="470" cy="190" r="3.5" fill="#FEF08A" opacity={0.5 + clarityPct * 0.5} />
+          <circle cx="530" cy="250" r="4" fill="#FEF08A" opacity={0.6 + clarityPct * 0.4} />
+          <circle cx="600" cy="205" r="3" fill="#FEF08A" opacity={0.5 + clarityPct * 0.5} />
+          <circle cx="670" cy="235" r="4.5" fill="#FEF08A" opacity={0.6 + clarityPct * 0.4} />
+          <circle cx="710" cy="180" r="3.5" fill="#FEF08A" opacity={0.5 + clarityPct * 0.5} />
 
           {/* Micro CO2 bubbles rising toward surface */}
           <circle cx="340" cy="155" r="1.5" fill="#FFFFFF" opacity="0.8" />
@@ -185,54 +246,33 @@ export default function VesselCrossSection({ simulationData }) {
           <circle cx="520" cy="158" r="1.8" fill="#FFFFFF" opacity="0.85" />
           <circle cx="630" cy="152" r="2" fill="#FFFFFF" opacity="0.8" />
 
-          {/* Trub Layer in Brewing Dock */}
-          {isConical ? (
-            /* Cleanly sequestered trub trapped inside dock */
-            <path
-              d="M 120,240 Q 180,230 235,240 L 235,295 A 25,25 0 0,1 210,300 L 130,300 A 20,20 0 0,1 120,280 Z"
-              fill="url(#trubGrad)"
-              stroke="#78350F"
-              strokeWidth="2"
-            />
-          ) : (
-            /* Missing funnel -> Trub washing violently back into main vessel */
+          {/* DYNAMIC KRAUSEN FOAM LAYER RISING FROM WORT */}
+          {dynamicKrausenHeight > 5 && (
             <g>
-              <path
-                d="M 120,240 L 235,240 L 235,300 L 120,300 Z"
-                fill="url(#trubGrad)"
+              <rect
+                x="245"
+                y={140 - dynamicKrausenHeight * 0.75}
+                width="510"
+                height={dynamicKrausenHeight * 0.75}
+                fill="url(#foamGrad)"
+                stroke="#FEF08A"
+                strokeWidth="1.5"
+                opacity="0.92"
               />
-              {/* Backwash swirl arrows into liquid wort */}
-              <path d="M 220,260 C 260,250 280,290 330,270" stroke="#F43F5E" strokeWidth="2.5" fill="none" />
-              <circle cx="280" cy="260" r="5" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
-              <circle cx="340" cy="275" r="6" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
-              <circle cx="390" cy="285" r="5" fill="#78350F" stroke="#F43F5E" strokeWidth="1.5" />
+              <circle cx="290" cy={140 - dynamicKrausenHeight * 0.4} r="5" fill="#FFFFFF" opacity="0.65" />
+              <circle cx="370" cy={140 - dynamicKrausenHeight * 0.6} r="7" fill="#FFFFFF" opacity="0.55" />
+              <circle cx="450" cy={140 - dynamicKrausenHeight * 0.3} r="6" fill="#FFFFFF" opacity="0.65" />
+              <circle cx="550" cy={140 - dynamicKrausenHeight * 0.5} r="7.5" fill="#FFFFFF" opacity="0.55" />
+              <circle cx="640" cy={140 - dynamicKrausenHeight * 0.4} r="5.5" fill="#FFFFFF" opacity="0.65" />
             </g>
           )}
-
-          {/* KRAUSEN FOAM LAYER RISING FROM WORT */}
-          <rect
-            x="245"
-            y={140 - krausenHeight * 0.75}
-            width="510"
-            height={krausenHeight * 0.75}
-            fill="url(#foamGrad)"
-            stroke="#FEF08A"
-            strokeWidth="1.5"
-            opacity="0.92"
-          />
-          {/* Krausen Foam Texture */}
-          <circle cx="290" cy={140 - krausenHeight * 0.4} r="5" fill="#FFFFFF" opacity="0.65" />
-          <circle cx="370" cy={140 - krausenHeight * 0.6} r="7" fill="#FFFFFF" opacity="0.55" />
-          <circle cx="450" cy={140 - krausenHeight * 0.3} r="6" fill="#FFFFFF" opacity="0.65" />
-          <circle cx="550" cy={140 - krausenHeight * 0.5} r="7.5" fill="#FFFFFF" opacity="0.55" />
-          <circle cx="640" cy={140 - krausenHeight * 0.4} r="5.5" fill="#FFFFFF" opacity="0.65" />
 
           {/* HEADSPACE AIR POCKET (Henry's Law O2 Reservoir) */}
           <rect
             x="245"
             y="65"
             width="510"
-            height={Math.max(10, 75 - krausenHeight * 0.75)}
+            height={Math.max(10, 75 - dynamicKrausenHeight * 0.75)}
             fill="url(#headspaceGrad)"
           />
           <text x="500" y="85" fontFamily="monospace" fontSize="11" fontWeight="bold" fill="#00F0FF" textAnchor="middle">
@@ -251,30 +291,46 @@ export default function VesselCrossSection({ simulationData }) {
 
           {/* 15 PSI PNEUMATIC RELIEF VALVE AT TOP */}
           <g transform="translate(500, 30)">
-            <rect 
-              x="-40" 
-              y="0" 
-              width="80" 
-              height="30" 
-              rx="6" 
-              fill="#111620" 
-              stroke={isBlowout ? '#F43F5E' : '#00F0FF'} 
-              strokeWidth="2.5" 
+            <rect
+              x="-40"
+              y="0"
+              width="80"
+              height="30"
+              rx="6"
+              fill="#111620"
+              stroke={isBlowout ? '#F43F5E' : isActivelyVenting ? '#F5B041' : '#00F0FF'}
+              strokeWidth="2.5"
               filter={isBlowout ? 'url(#neonGlowRed)' : 'url(#neonGlowCyan)'}
             />
-            <circle cx="0" cy="15" r="6" fill={isBlowout ? '#F43F5E' : '#10B981'} />
-            <text x="0" y="-8" fontFamily="monospace" fontSize="10" fontWeight="bold" fill={isBlowout ? '#F43F5E' : '#00F0FF'} textAnchor="middle">
-              15 PSI RELIEF VALVE {isBlowout ? '⚠️ RISK' : '✓ SECURE'}
+            <circle cx="0" cy="15" r="6" fill={isBlowout ? '#F43F5E' : isActivelyVenting ? '#F5B041' : '#10B981'} />
+            <text x="0" y="-8" fontFamily="monospace" fontSize="10" fontWeight="bold" fill={isBlowout ? '#F43F5E' : isActivelyVenting ? '#F5B041' : '#00F0FF'} textAnchor="middle">
+              15 PSI RELIEF VALVE {isBlowout ? '⚠️ RISK' : isActivelyVenting ? '💨 ACOUSTIC HISS' : '✓ EQUILIBRIUM'}
             </text>
+            {isActivelyVenting && (
+              <g opacity="0.7">
+                <line x1="-15" y1="-12" x2="-25" y2="-22" stroke="#F5B041" strokeWidth="2" />
+                <line x1="0" y1="-14" x2="0" y2="-26" stroke="#F5B041" strokeWidth="2" />
+                <line x1="15" y1="-12" x2="25" y2="-22" stroke="#F5B041" strokeWidth="2" />
+              </g>
+            )}
           </g>
 
           {/* Analog-Digital Pressure Arc Gauge (Lower Right Overlay) */}
           <g transform="translate(680, 260)">
             <circle cx="0" cy="0" r="32" fill="#05070A" stroke="#00F0FF" strokeWidth="2.5" />
             <circle cx="0" cy="0" r="2.5" fill="#FFFFFF" />
-            {/* Needle pointing toward 15 PSI */}
-            <line x1="0" y1="0" x2="16" y2="-16" stroke={isBlowout ? '#F43F5E' : '#00F0FF'} strokeWidth="2.5" strokeLinecap="round" />
-            <text x="0" y="14" fontFamily="monospace" fontSize="9" fontWeight="bold" fill="#00F0FF" textAnchor="middle">15 PSI</text>
+            <line
+              x1="0"
+              y1="0"
+              x2={currentTau < 0.2 ? "0" : "16"}
+              y2={currentTau < 0.2 ? "-22" : "-16"}
+              stroke={isBlowout ? '#F43F5E' : '#00F0FF'}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <text x="0" y="14" fontFamily="monospace" fontSize="9" fontWeight="bold" fill="#00F0FF" textAnchor="middle">
+              {currentTau < 0.2 ? '5 PSI' : '15 PSI'}
+            </text>
             <text x="0" y="24" fontFamily="monospace" fontSize="7" fill="#64748B" textAnchor="middle">PRESSURE</text>
           </g>
 
@@ -321,7 +377,7 @@ export default function VesselCrossSection({ simulationData }) {
             {foamCeilingGap > 0 ? `${foamCeilingGap} mL buffer` : 'BLOWOUT RISK'}
           </span>
           <span className="text-[10px] text-slate-500">
-            Foam: {physics.krausenVolumeMl} mL vs {airPocket} mL pocket
+            Foam: {Math.round(dynamicKrausenHeight * 12)} mL vs {airPocket} mL pocket
           </span>
         </div>
       </div>
