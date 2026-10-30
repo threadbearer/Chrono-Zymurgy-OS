@@ -1,0 +1,750 @@
+import React, { useState, useMemo } from 'react';
+import { useTerminology } from '../context/TerminologyContext';
+import { MASTER_KITS } from '../data/kits';
+import { simulateFermentation } from '../utils/physicsEngine';
+import VesselCrossSection from './VesselCrossSection';
+import { 
+  AreaChart, 
+  Area, 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ReferenceLine,
+  ResponsiveContainer 
+} from 'recharts';
+import { 
+  Sliders, 
+  Thermometer, 
+  Wind, 
+  ShieldCheck, 
+  AlertOctagon, 
+  Clock, 
+  Snowflake, 
+  Activity, 
+  Zap, 
+  Heart, 
+  Award,
+  Layers,
+  Sparkles,
+  Info,
+  Beaker,
+  Check
+} from 'lucide-react';
+
+export default function DynastySimulator({ initialKit, customKits = [], onPitchBatch }) {
+  const { mode, t } = useTerminology();
+
+  const allKits = [...customKits, ...MASTER_KITS];
+
+  // 7 Master Controls State
+  const [selectedKitId, setSelectedKitId] = useState(initialKit?.id || MASTER_KITS[0].id);
+  const [tempF, setTempF] = useState(72);
+  const [airPocketMl, setAirPocketMl] = useState(1200);
+  const [aerationProtocol, setAerationProtocol] = useState('dual_vector'); // 'gentle' | 'standard' | 'dual_vector'
+  const [shake90Min, setShake90Min] = useState(true);
+  const [conicalInstalled, setConicalInstalled] = useState(true);
+  const [undockTau, setUndockTau] = useState(1.15);
+  const [fridgeHours, setFridgeHours] = useState(84);
+
+  // Active Sub-View Tab: 'dynasty' | 'metabolic' | 'vessel' | 'soma'
+  const [activeSubView, setActiveSubView] = useState('dynasty');
+
+  const selectedKit = allKits.find((k) => k.id === selectedKitId) || MASTER_KITS[0];
+
+  // Run the Multi-Physics Simulation
+  const simulation = useMemo(() => {
+    return simulateFermentation({
+      kit: selectedKit,
+      tempF,
+      airPocketMl,
+      aerationProtocol,
+      shake90Min,
+      conicalInstalled,
+      undockTau,
+      fridgeHours,
+    });
+  }, [selectedKit, tempF, airPocketMl, aerationProtocol, shake90Min, conicalInstalled, undockTau, fridgeHours]);
+
+  // Preset Shortcuts
+  const applyPreset = (preset) => {
+    if (preset === 'soma_max') {
+      setUndockTau(1.15);
+      setAerationProtocol('dual_vector');
+      setShake90Min(true);
+      setConicalInstalled(true);
+      setFridgeHours(84);
+      setAirPocketMl(1200);
+    } else if (preset === 'crowd_harmonic') {
+      setUndockTau(1.30);
+      setAerationProtocol('standard');
+      setShake90Min(false);
+      setConicalInstalled(true);
+      setFridgeHours(120);
+    } else if (preset === 'accidental_yeast_bomb') {
+      setConicalInstalled(false); // Missing funnel
+      setAirPocketMl(750); // Low headspace
+      setUndockTau(0.90);  // Premature undock
+      setFridgeHours(24);   // Barely chilled
+    }
+  };
+
+  // Custom Chart Tooltip
+  const CustomChartTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="hw-panel p-2.5 rounded text-xs font-mono-tabular border border-white/20 shadow-2xl backdrop-blur-md">
+          <p className="text-slate-300 font-bold mb-1 border-b border-white/10 pb-0.5">{label}</p>
+          {payload.map((entry, index) => (
+            <div key={`item-${index}`} className="flex items-center justify-between space-x-3 py-0.5">
+              <span style={{ color: entry.color }} className="font-medium">
+                {entry.name}:
+              </span>
+              <span className="text-white font-bold">
+                {entry.value}
+                {entry.unit || ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Module Title Banner & Preset Bank */}
+      <div className="hw-panel p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono-tabular mb-1">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span className="tracking-widest uppercase font-semibold">CERN-Grade Zymurgy Kinetics Engine</span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">NON-EQUILIBRIUM DYNAMICS</span>
+          </div>
+          <h2 className="text-2xl font-bold font-display text-white tracking-tight">
+            {mode === 'biophysics'
+              ? 'Multi-Physics Bioreactor Flight Deck & Yeast Dynasty'
+              : 'The Living Yeast Civilization & Breath Chamber'}
+          </h2>
+          <p className="text-xs text-slate-300 mt-0.5 max-w-2xl leading-relaxed">
+            Real-time simulation of Henry&apos;s Law oxygen transfer, G₀ mother cell Stokes settling, G₄ daughter viability, and 15 PSI containment.
+          </p>
+        </div>
+
+        {/* Quick Simulation Presets */}
+        <div className="flex items-center space-x-2 shrink-0 font-mono-tabular text-xs">
+          <button
+            onClick={() => applyPreset('soma_max')}
+            className="hw-btn px-2.5 py-1.5 rounded text-cyan-300 border border-cyan-500/40 hover:border-cyan-400 transition"
+          >
+            Soma-Max (1.15&tau;)
+          </button>
+          <button
+            onClick={() => applyPreset('crowd_harmonic')}
+            className="hw-btn px-2.5 py-1.5 rounded text-amber-300 border border-amber-500/40 hover:border-amber-400 transition"
+          >
+            Crowd-Harmonic (1.30&tau;)
+          </button>
+          <button
+            onClick={() => applyPreset('accidental_yeast_bomb')}
+            className="hw-btn px-2.5 py-1.5 rounded text-rose-300 border border-rose-500/40 hover:border-rose-400 transition"
+          >
+            💥 Yeast Bomb Error
+          </button>
+        </div>
+      </div>
+
+      {/* Split-Screen Flight Deck (12 Cols: 4 Cols Fader Rack + 8 Cols Display) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left Column (4 Cols): The 7-Channel Hardware Fader Rack */}
+        <div className="lg:col-span-4 hw-panel p-4 space-y-4">
+          <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+            <span className="font-mono-tabular text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center space-x-1.5">
+              <Sliders className="w-4 h-4" />
+              <span>7-Channel Fader Rack</span>
+            </span>
+            <span className="text-[10px] font-mono-tabular text-slate-500">
+              TEENAGE_ENG_CONSOLE
+            </span>
+          </div>
+
+          <div className="space-y-3.5 text-xs font-mono-tabular">
+            {/* CH.01 // BASELINE RECIPE */}
+            <div className="hw-well p-3 rounded space-y-1.5">
+              <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
+                <span>CH.01 // ACTIVE BASELINE</span>
+                <span className="text-cyan-400 font-bold">KIT #{selectedKit.id?.slice(0, 8)}</span>
+              </div>
+              <select
+                value={selectedKitId}
+                onChange={(e) => setSelectedKitId(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded hw-well border border-white/10 text-white font-mono-tabular text-xs focus:border-cyan-400 outline-none"
+              >
+                {allKits.map((k) => (
+                  <option key={k.id} value={k.id} className="bg-[#0B0E14] text-white">
+                    {k.name} ({k.abv}% ABV)
+                  </option>
+                ))}
+              </select>
+              <div className="flex justify-between text-[10px] text-slate-400 pt-0.5">
+                <span>Base &tau;: {selectedKit.baseTau}h</span>
+                <span className="text-cyan-300 truncate max-w-[140px]">{selectedKit.yeast?.strain}</span>
+              </div>
+            </div>
+
+            {/* CH.02 // AMBIENT TEMPERATURE */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
+                  <Thermometer className="w-3.5 h-3.5 text-amber-400" />
+                  <span>CH.02 // {mode === 'biophysics' ? 'AMBIENT TEMP (T_amb)' : 'ROOM WARMTH'}</span>
+                </span>
+                <span className="px-2 py-0.5 rounded hw-well text-amber-300 font-bold border border-amber-500/30">
+                  {tempF}.0 °F
+                </span>
+              </div>
+              <input
+                type="range"
+                min="60"
+                max="82"
+                value={tempF}
+                onChange={(e) => setTempF(parseInt(e.target.value, 10))}
+                className="hw-fader"
+              />
+              <div className="flex justify-between text-[9px] text-slate-500">
+                <span>60°F [SLOW_STOKES]</span>
+                <span className="text-amber-400 font-semibold">72°F [OPTIMAL]</span>
+                <span>82°F [RAPID]</span>
+              </div>
+            </div>
+
+            {/* CH.03 // HEADSPACE AIR POCKET */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
+                  <Wind className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>CH.03 // {mode === 'biophysics' ? 'AIR POCKET (V_air)' : 'HEADSPACE SKY'}</span>
+                </span>
+                <span className={`px-2 py-0.5 rounded hw-well font-bold border ${airPocketMl < 820 ? 'text-rose-400 border-rose-500/50 animate-pulse' : 'text-cyan-300 border-cyan-500/30'}`}>
+                  {airPocketMl.toLocaleString()} mL
+                </span>
+              </div>
+              <input
+                type="range"
+                min="300"
+                max="1600"
+                step="50"
+                value={airPocketMl}
+                onChange={(e) => setAirPocketMl(parseInt(e.target.value, 10))}
+                className="hw-fader"
+              />
+              <div className="flex justify-between text-[9px] text-slate-500">
+                <span className="text-rose-400 font-semibold">300mL (&lt;820 BLOWOUT)</span>
+                <span className="text-cyan-400 font-semibold">1,200mL [STD]</span>
+                <span>1,600mL</span>
+              </div>
+            </div>
+
+            {/* CH.04 // AERATION & AGITATION PROTOCOL */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
+                <span>CH.04 // AERATION DISSOLUTION</span>
+                <span className="text-cyan-400 font-bold">HENRY_LAW</span>
+              </div>
+              <select
+                value={aerationProtocol}
+                onChange={(e) => setAerationProtocol(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded hw-well border border-white/10 text-white font-mono-tabular text-xs focus:border-cyan-400 outline-none"
+              >
+                <option value="gentle" className="bg-[#0B0E14]">Gentle 30s Swirl (+12 mg O₂)</option>
+                <option value="standard" className="bg-[#0B0E14]">Standard 2-Min Shake (+32 mg O₂)</option>
+                <option value="dual_vector" className="bg-[#0B0E14]">Dual-Vector Shake (+48 mg O₂)</option>
+              </select>
+              <label className="flex items-center space-x-2 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={shake90Min}
+                  onChange={(e) => setShake90Min(e.target.checked)}
+                  className="rounded accent-cyan-400 cursor-pointer"
+                />
+                <span className="text-[10px] text-slate-300">
+                  +90m Post-Pitch Agitation Pulse (+18% O₂)
+                </span>
+              </label>
+            </div>
+
+            {/* CH.05 // CONICAL FUNNEL SAFETY SWITCH */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between text-slate-400 text-[10px] uppercase">
+                <span>CH.05 // CONICAL TRUB FUNNEL</span>
+                <span className={conicalInstalled ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                  {conicalInstalled ? 'LOCKED' : 'ALERT'}
+                </span>
+              </div>
+              <button
+                onClick={() => setConicalInstalled(!conicalInstalled)}
+                className={`w-full py-2 px-3 rounded font-bold font-mono-tabular text-xs transition flex items-center justify-center space-x-2 shadow-sm ${
+                  conicalInstalled
+                    ? 'bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                    : 'bg-rose-950/90 border border-rose-500 text-rose-200 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.35)]'
+                }`}
+              >
+                {conicalInstalled ? (
+                  <>
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>[ CONICAL FUNNEL: LOCKED ]</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertOctagon className="w-4 h-4 text-rose-400" />
+                    <span>[ CONICAL MISSING: YEAST BOMB ]</span>
+                  </>
+                )}
+              </button>
+              <div className="text-[10px] text-slate-500 text-center">
+                {conicalInstalled ? '✓ 92% mother/trub cells cleanly isolated in dock' : '⚠️ 75% mother cells resuspended into liquid'}
+              </div>
+            </div>
+
+            {/* CH.06 // UNDOCK BIOLOGICAL TIME */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>CH.06 // UNDOCK TIME (&tau;_undock)</span>
+                </span>
+                <span className="px-2 py-0.5 rounded hw-well text-cyan-300 font-bold border border-cyan-500/30">
+                  {undockTau.toFixed(2)} &tau;
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0.80"
+                max="1.60"
+                step="0.05"
+                value={undockTau}
+                onChange={(e) => setUndockTau(parseFloat(e.target.value))}
+                className="hw-fader"
+              />
+              <div className="flex justify-between text-[9px] text-slate-500">
+                <span className="text-rose-400">0.80&tau; [ROUGH]</span>
+                <span className="text-cyan-400 font-semibold">1.15&tau; [SOMA_MAX]</span>
+                <span>1.40&tau; [CRISP]</span>
+              </div>
+            </div>
+
+            {/* CH.07 // FRIDGE COLD LOCK */}
+            <div className="hw-well p-3 rounded space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[10px] uppercase flex items-center space-x-1">
+                  <Snowflake className="w-3.5 h-3.5 text-blue-400" />
+                  <span>CH.07 // {mode === 'biophysics' ? 'STOKES COLD LOCK (38°F)' : 'FRIDGE CHILL'}</span>
+                </span>
+                <span className="px-2 py-0.5 rounded hw-well text-blue-300 font-bold border border-blue-500/30">
+                  {fridgeHours} hrs
+                </span>
+              </div>
+              <input
+                type="range"
+                min="12"
+                max="360"
+                step="12"
+                value={fridgeHours}
+                onChange={(e) => setFridgeHours(parseInt(e.target.value, 10))}
+                className="hw-fader"
+              />
+              <div className="flex justify-between text-[9px] text-slate-500">
+                <span>12h [CLOUDY]</span>
+                <span className="text-blue-400 font-semibold">84h [3.5d STD]</span>
+                <span>168h [7d LAGER]</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (8 Cols): 4-Quadrant Telemetry Display & CAD Vessel */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Live Top Telemetry Ribbon (4 KPI Readout Modules in .hw-well boxes) */}
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 text-xs font-mono-tabular">
+            {/* KPI 1: 1.00 Tau Horizon */}
+            <div className="hw-well p-3 rounded border border-white/5 space-y-1">
+              <span className="text-slate-400 block text-[10px] uppercase">
+                {mode === 'biophysics' ? '1.00 τ Horizon' : 'Full Breath (1.00 τ)'}
+              </span>
+              <span className="text-xl font-bold text-white block">
+                ~{Math.round(selectedKit.baseTau * (72 / tempF))} hrs
+              </span>
+              <span className="text-[10px] text-slate-500 block truncate">
+                Arrhenius-scaled @ {tempF}°F
+              </span>
+            </div>
+
+            {/* KPI 2: Live G4 Daughters */}
+            <div className="hw-well p-3 rounded border border-amber-500/30 space-y-1">
+              <span className="text-amber-400 block text-[10px] uppercase font-bold">
+                Live G4 Daughters
+              </span>
+              <span className="text-xl font-bold text-amber-300 block">
+                {simulation.nutrition.suspendedG4PerPint} Billion
+              </span>
+              <span className="text-[10px] text-slate-500 block truncate">
+                Per 500 mL pint (0-bud-scar)
+              </span>
+            </div>
+
+            {/* KPI 3: Bioavailable O2 & Gn */}
+            <div className="hw-well p-3 rounded border border-cyan-500/30 space-y-1">
+              <span className="text-cyan-400 block text-[10px] uppercase font-bold">
+                Effective O₂ &amp; Gn
+              </span>
+              <span className="text-xl font-bold text-cyan-300 block">
+                Gn = {simulation.physics.Gn}
+              </span>
+              <span className="text-[10px] text-slate-500 block truncate">
+                ~{simulation.physics.effectiveO2TransferredMg} mg O₂ transferred
+              </span>
+            </div>
+
+            {/* KPI 4: Soma-Index & KCAL */}
+            <div className="hw-well p-3 rounded border border-emerald-500/30 space-y-1">
+              <span className="text-emerald-400 block text-[10px] uppercase font-bold">
+                Soma-Index &amp; Kcal
+              </span>
+              <span className="text-xl font-bold text-emerald-300 block">
+                &Phi; {simulation.scores.buzz} // {simulation.nutrition.totalPintCalories} kcal
+              </span>
+              <span className="text-[10px] text-slate-500 block truncate">
+                +{simulation.nutrition.yeastKcalPerPint} yeast kcal per pint
+              </span>
+            </div>
+          </div>
+
+          {/* Sub-View Navigation Tabs */}
+          <div className="hw-panel p-1.5 flex items-center space-x-1.5 overflow-x-auto text-xs font-mono-tabular">
+            <button
+              onClick={() => setActiveSubView('dynasty')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
+                activeSubView === 'dynasty'
+                  ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>VIEW A: DYNASTY &amp; SETTLING (G₀ &rarr; G₄)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSubView('metabolic')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
+                activeSubView === 'metabolic'
+                  ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>VIEW B: METABOLIC IMPRINT</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSubView('vessel')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
+                activeSubView === 'vessel'
+                  ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>VIEW C: CAD PINTER CUTAWAY</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSubView('soma')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition ${
+                activeSubView === 'soma'
+                  ? 'hw-well text-cyan-300 border border-cyan-400/60 font-semibold shadow-[0_0_12px_rgba(0,240,255,0.2)]'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Heart className="w-3.5 h-3.5" />
+              <span>VIEW D: SOMA-CARD NUTRITION</span>
+            </button>
+          </div>
+
+          {/* Sub-View Content Display */}
+          <div>
+            {/* VIEW A: GENERATIONAL DYNASTY & SETTLING CURVE */}
+            {activeSubView === 'dynasty' && (
+              <div className="hw-panel p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+                  <div>
+                    <h4 className="font-display text-sm font-bold text-white flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_8px_#FACC15]"></span>
+                      <span>
+                        {mode === 'biophysics'
+                          ? 'Yeast Generational Dynasty & Stokes Settling (G₀ Mothers vs G₄ Daughters)'
+                          : 'Living Yeast Family Tree (Old Mothers Falling to Dock vs Youthful Daughters)'}
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-400 font-mono-tabular mt-0.5">
+                      Gn = <strong className="text-cyan-300">{simulation.physics.Gn}</strong> generations 
+                      yields ~<strong className="text-yellow-300">{simulation.nutrition.suspendedG4PerPint} Billion</strong> live G₄ daughter cells suspended per pint.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-3 text-xs font-mono-tabular">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                      <span className="text-yellow-300">G₄ Daughters (Silk/GSH)</span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                      <span className="text-rose-300">G₀ Mothers &amp; Trub</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-72 w-full hw-well p-2 rounded">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={simulation.charts.timeSeriesDynasty}>
+                      <defs>
+                        <linearGradient id="g4GradOverhaul" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#F5B041" stopOpacity={0.85}/>
+                          <stop offset="95%" stopColor="#F5B041" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="motherGradOverhaul" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.85}/>
+                          <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                      <XAxis dataKey="phase" stroke="#64748B" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                      <YAxis stroke="#64748B" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                      <Tooltip content={<CustomChartTooltip />} />
+                      <ReferenceLine x="Undock (1.15τ)" stroke="#00F0FF" strokeDasharray="3 3" label={{ value: 'UNDOCK', fill: '#00F0FF', fontSize: 10, fontFamily: 'monospace' }} />
+                      <Area
+                        type="monotone"
+                        dataKey="g4Daughters"
+                        name={mode === 'biophysics' ? 'G4 Daughters (% Live)' : 'Youthful Daughters (% Live)'}
+                        stroke="#F5B041"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#g4GradOverhaul)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="motherCellsTrub"
+                        name={mode === 'biophysics' ? 'G0 Mothers & Trub' : 'Old Mothers & Hop Sludge'}
+                        stroke="#F43F5E"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#motherGradOverhaul)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="hw-well p-3 rounded text-xs font-mono-tabular text-slate-300 space-y-1">
+                  <span className="text-cyan-400 font-bold block uppercase tracking-wider">Hydrodynamic Principle:</span>
+                  <p className="leading-relaxed">
+                    {conicalInstalled ? (
+                      <>
+                        With the <strong>Conical Funnel LOCKED</strong>, dense scarred G₀/G₁ mother cells and heavy hop polyphenols slip down the steep 45° funnel walls into the Brewing Dock during the first 1.0&tau; of primary fermentation. Undocking cleanly eliminates 92% of harsh tannins, leaving vibrant, unscarred G₄ virgin daughters suspended in the beer to reabsorb diacetyl and synthesize bioavailable glutathione.
+                      </>
+                    ) : (
+                      <span className="text-rose-300">
+                        ⚠️ <strong>CRITICAL WARNING: Conical Funnel is MISSING!</strong> Without the hydrodynamic funnel barrier, 75% of mother cells and hop sediment wash violently back into the liquid during undocking. This generates severe phenolic trub drag (throat scrape) and bitter astringency.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW B: METABOLIC IMPRINT & BOTANICAL VECTOR */}
+            {activeSubView === 'metabolic' && (
+              <div className="hw-panel p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+                  <div>
+                    <h4 className="font-display text-sm font-bold text-white flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_8px_#C084FC]"></span>
+                      <span>
+                        {mode === 'biophysics'
+                          ? 'Metabolic Intermediate Decay & 15 PSI Terpene Retention'
+                          : 'Butterscotch & Green-Apple Cleanup vs Fresh Aroma Wave'}
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-400 font-mono-tabular mt-0.5">
+                      Diacetyl Cushion: <strong className="text-amber-400">{simulation.scores.dc}/10</strong> | 
+                      Acetaldehyde Snap: <strong className="text-emerald-400">{simulation.scores.as}/10</strong> | 
+                      Terpene Lift: <strong className="text-purple-400">{simulation.scores.aroma}/10</strong>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-3 text-[11px] font-mono-tabular">
+                    <span className="text-amber-400">&bull; Diacetyl (Dc)</span>
+                    <span className="text-emerald-400">&bull; Acetaldehyde (As)</span>
+                    <span className="text-purple-400">&bull; Terpene Lift (TL)</span>
+                    <span className="text-rose-400">&bull; Trub Drag (PD)</span>
+                  </div>
+                </div>
+
+                <div className="h-72 w-full hw-well p-2 rounded">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={simulation.charts.timeSeriesMetabolic}>
+                      <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                      <XAxis dataKey="phase" stroke="#64748B" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                      <YAxis domain={[0, 10]} stroke="#64748B" tick={{ fontSize: 11, fontFamily: 'monospace' }} />
+                      <Tooltip content={<CustomChartTooltip />} />
+                      <Line type="monotone" dataKey="diacetyl" name="Diacetyl (Dc)" stroke="#F5B041" strokeWidth={2.5} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="acetaldehyde" name="Acetaldehyde (As)" stroke="#10B981" strokeWidth={2.5} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="terpeneLift" name="Terpene Lift (TL)" stroke="#A855F7" strokeWidth={2.5} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="phenolicDrag" name="Trub Drag (PD)" stroke="#F43F5E" strokeWidth={2} strokeDasharray="4 4" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono-tabular">
+                  <div className="hw-well p-3 rounded border border-amber-500/30">
+                    <span className="text-amber-300 font-bold block mb-1">
+                      {t('polish_phase')}
+                    </span>
+                    <p className="text-slate-400 leading-relaxed">
+                      Between 1.00&tau; and 1.25&tau;, yeast re-absorbs diacetyl and reduces green-apple acetaldehyde into ethanol. Undocking at 1.15&tau; preserves the ideal &ldquo;Soma-Max&rdquo; creamsicle cushion.
+                    </p>
+                  </div>
+
+                  <div className="hw-well p-3 rounded border border-purple-500/30">
+                    <span className="text-purple-300 font-bold block mb-1">
+                      15 PSI Pressure Containment
+                    </span>
+                    <p className="text-slate-400 leading-relaxed">
+                      Unlike traditional open fermenters that blow off aromatic terpenes through airlocks, the Pinter&apos;s 15 PSI pressure cap traps 85-95% of delicate monoterpenes and citrus hop oils.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW C: INTERACTIVE CAD VESSEL CUTAWAY */}
+            {activeSubView === 'vessel' && (
+              <VesselCrossSection simulationData={simulation} />
+            )}
+
+            {/* VIEW D: LIVE 500mL PINT NUTRITION & SOMA-CARD */}
+            {activeSubView === 'soma' && (
+              <div className="hw-panel p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div>
+                    <span className="text-xs font-mono-tabular text-cyan-400 uppercase tracking-wider block">
+                      Bio-Energetic Nutrition Telemetry
+                    </span>
+                    <h3 className="text-xl font-bold font-display text-white mt-0.5">
+                      Live 500 mL Pint Nutrition &amp; Soma-Card
+                    </h3>
+                  </div>
+
+                  <div className="hw-well px-3 py-1.5 rounded border border-yellow-500/40 text-yellow-300 font-mono-tabular text-xs font-bold flex items-center space-x-1.5 shadow-[0_0_12px_rgba(250,204,21,0.25)]">
+                    <Sparkles className="w-4 h-4 text-yellow-400" />
+                    <span>
+                      {t('axis_5', 'short')}: {simulation.scores.buzz} / 10
+                    </span>
+                  </div>
+                </div>
+
+                {/* Nutrition Telemetry Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono-tabular">
+                  {/* Total Pint Calories */}
+                  <div className="hw-well p-3.5 rounded space-y-1">
+                    <span className="text-slate-400 text-[10px] uppercase block">Total Pint Calories</span>
+                    <span className="text-2xl font-bold text-white block">
+                      {simulation.nutrition.totalPintCalories} kcal
+                    </span>
+                    <div className="text-[10px] text-slate-500 pt-1 border-t border-white/5 space-y-0.5">
+                      <div className="flex justify-between">
+                        <span>Base Wort &amp; EtOH:</span>
+                        <span className="text-slate-300 font-semibold">{simulation.nutrition.baseWortKcalPerPint} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Suspended Live Yeast:</span>
+                        <span className="text-yellow-400 font-semibold">+{simulation.nutrition.yeastKcalPerPint} kcal</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Suspended Live G4 Cells */}
+                  <div className="hw-well p-3.5 rounded space-y-1">
+                    <span className="text-slate-400 text-[10px] uppercase block">Suspended Live G₄ Cells</span>
+                    <span className="text-2xl font-bold text-yellow-300 block">
+                      {simulation.nutrition.suspendedG4PerPint} B
+                    </span>
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-white/5">
+                      Billions of unscarred virgin daughter cells with smooth, unoxidized lipid membranes.
+                    </p>
+                  </div>
+
+                  {/* Bioavailable B-Complex */}
+                  <div className="hw-well p-3.5 rounded space-y-1">
+                    <span className="text-slate-400 text-[10px] uppercase block">Bioavailable B-Complex</span>
+                    <span className="text-2xl font-bold text-cyan-300 block">
+                      {simulation.nutrition.bComplexPctDv}% DV
+                    </span>
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-white/5">
+                      Synthesized Thiamine (B₁), Riboflavin (B₂), Niacin (B₃), Pyridoxine (B₆), and Folate (B₉).
+                    </p>
+                  </div>
+
+                  {/* Active Glutathione (GSH) */}
+                  <div className="hw-well p-3.5 rounded space-y-1">
+                    <span className="text-slate-400 text-[10px] uppercase block">Active Glutathione (GSH)</span>
+                    <span className="text-2xl font-bold text-emerald-300 block">
+                      {simulation.nutrition.gshMgPerPint} mg
+                    </span>
+                    <p className="text-[10px] text-slate-500 pt-1 border-t border-white/5">
+                      Tripeptide master antioxidant buffering acetaldehyde metabolism and protecting hepatocytes.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Dynamic Tasting Summary */}
+                <div className="hw-well p-4 rounded space-y-2">
+                  <span className="font-mono-tabular text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                    <Award className="w-4 h-4 text-cyan-400" />
+                    <span>
+                      {mode === 'biophysics' ? 'Dynamic Soma-Kinetic Tasting Report' : 'The Living-Rhythm Experience Report'}
+                    </span>
+                  </span>
+
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    {mode === 'biophysics' ? (
+                      <>
+                        At <strong>{tempF}&deg;F</strong> ambient temperature and an undock biological coordinate of <strong>{undockTau.toFixed(2)}&tau;</strong>, this batch achieves a <strong>Gn replicative factor of {simulation.physics.Gn}</strong>. 
+                        {conicalInstalled ? (
+                          ` The conical filter effectively sequesters 92% of chitin-scarred mother cells into the dock. Suspended virgin daughter cells yield a low diacetyl cushion (Dc ${simulation.scores.dc}/10) with elevated glutathione (${simulation.nutrition.gshMgPerPint} mg GSH) buffering ethanol toxicity. Carbonic velocity is rated at ${simulation.scores.carb}/10 with negligible phenolic drag.`
+                        ) : (
+                          ` CAUTION: With the conical funnel absent, backward shear carries 75% of trub back into the liquid, driving phenolic trub drag (PD ${simulation.scores.drag}/10) and masking hop terpenes.`
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        Brewing this batch at a comfortable <strong>{tempF}&deg;F</strong> and letting the yeast breathe until <strong>{undockTau.toFixed(2)} breaths</strong> creates a remarkably vibrant pour. 
+                        {conicalInstalled ? (
+                          ` Because your sludge guard funnel was in place, all the harsh hop grit stayed trapped in the dock. You get a heavenly velvet smoothie mouthfeel, soft butterscotch warmth without any throat burn, and a glowing, happy buzz with ${simulation.nutrition.bComplexPctDv}% of your daily B-vitamins.`
+                        ) : (
+                          ` Watch out: you forgot the sludge guard funnel! The bottom sludge washed back into the beer, giving it a rough throat scrape and masking all the juicy fruit aromas.`
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

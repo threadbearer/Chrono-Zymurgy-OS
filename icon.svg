@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329" />
+      <stop offset="50%" stop-color="#080d1a" />
+      <stop offset="100%" stop-color="#050811" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="60%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Rounded Squircle for Linux Icon -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" stroke="#1e293b" stroke-width="6" />
+
+  <!-- Outer Energy Ring -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#1e293b" stroke-width="4" stroke-dasharray="8 8" />
+  <circle cx="256" cy="256" r="185" fill="none" stroke="url(#cyanGrad)" stroke-width="3" opacity="0.3" />
+
+  <!-- Pinter Barrel Geometric Silhouette -->
+  <!-- Main cylinder body horizontal orientation -->
+  <g transform="translate(60, 110)">
+    <!-- Back Cap / Docking Base -->
+    <path d="M 40,80 L 70,80 L 70,220 L 40,220 A 25,70 0 0,1 40,80 Z" fill="#1e293b" stroke="#334155" stroke-width="4" />
+    
+    <!-- Main Fermentation Chamber Body -->
+    <rect x="70" y="70" width="220" height="160" rx="20" fill="#0f172a" stroke="#38bdf8" stroke-width="5" />
+    
+    <!-- Golden Liquid Wave Inside -->
+    <path d="M 75,130 Q 120,120 180,135 T 285,125 L 285,220 Q 285,225 280,225 L 80,225 Q 75,225 75,220 Z" fill="url(#amberGrad)" opacity="0.85" />
+    
+    <!-- Sparkling yeast bubbles in suspension -->
+    <circle cx="110" cy="180" r="5" fill="#fef08a" opacity="0.9" />
+    <circle cx="130" cy="155" r="3.5" fill="#fef08a" opacity="0.7" />
+    <circle cx="190" cy="190" r="6" fill="#fef08a" opacity="0.8" />
+    <circle cx="210" cy="160" r="4" fill="#fef08a" opacity="0.6" />
+    <circle cx="240" cy="175" r="5" fill="#fef08a" opacity="0.9" />
+
+    <!-- Front Tapping Handle / Spout -->
+    <path d="M 290,110 L 330,110 L 330,190 L 290,190 Z" fill="#1e293b" stroke="#475569" stroke-width="4" />
+    <circle cx="340" cy="150" r="14" fill="#06b6d4" filter="url(#neonGlow)" />
+    <!-- Pressure Release Valve at Top -->
+    <rect x="160" y="50" width="30" height="20" rx="6" fill="#06b6d4" />
+    <!-- Dynamic Hiss gas jets -->
+    <line x1="165" y1="45" x2="155" y2="30" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" />
+    <line x1="175" y1="45" x2="175" y2="25" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" />
+    <line x1="185" y1="45" x2="195" y2="30" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" />
+  </g>
+
+  <!-- Large Stylized Greek Tau (τ) Overlay with Glow -->
+  <g filter="url(#neonGlow)">
+    <!-- Tau Crossbar -->
+    <path d="M 170,165 C 190,163 322,163 342,165 C 348,166 352,172 350,178 C 348,184 342,188 335,188 L 274,188 C 274,188 274,320 274,335 C 274,352 284,360 298,360 C 308,360 316,354 322,344 C 326,338 334,336 340,340 C 346,344 348,352 344,358 C 334,374 318,382 296,382 C 262,382 248,362 248,335 L 248,188 L 177,188 C 170,188 164,184 162,178 C 160,172 164,166 170,165 Z" fill="#ffffff" />
+  </g>
+  <path d="M 170,165 C 190,163 322,163 342,165 C 348,166 352,172 350,178 C 348,184 342,188 335,188 L 274,188 C 274,188 274,320 274,335 C 274,352 284,360 298,360 C 308,360 316,354 322,344 C 326,338 334,336 340,340 C 346,344 348,352 344,358 C 334,374 318,382 296,382 C 262,382 248,362 248,335 L 248,188 L 177,188 C 170,188 164,184 162,178 C 160,172 164,166 170,165 Z" fill="url(#cyanGrad)" />
+
+  <!-- Subtitle Text "CHRONO-ZYMURGY" -->
+  <text x="256" y="440" font-family="'JetBrains Mono', monospace" font-size="28" font-weight="700" fill="#94a3b8" letter-spacing="6" text-anchor="middle">CHRONO-ZYMURGY</text>
+  <text x="256" y="468" font-family="'JetBrains Mono', monospace" font-size="16" font-weight="600" fill="#06b6d4" letter-spacing="4" text-anchor="middle">TAU PROTOCOL OS</text>
+</svg>

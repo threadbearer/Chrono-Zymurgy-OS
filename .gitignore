@@ -1,0 +1,40 @@
+# Dependencies & Build
+node_modules/
+dist/
+dist-electron/
+release/
+
+# Python Cache & Testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+*/.venv/
+*/venv/
+*/__pycache__/
+*/.pytest_cache/
+.env
+
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Private Recipe Vault & Local Secrets
+src/data/kits.vault.*
+src/data/*.private.*
+.env*.local
+
+# The Crucible Method (Internal AI Quality Fortification - Excluded from Public Repo)
+scripts/crucible*
+docs/*CRUCIBLE*
+docs/*crucible*
+enrichment_suggestions.*
+

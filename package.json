@@ -1,0 +1,42 @@
+{
+  "name": "chrono-zymurgy-os",
+  "version": "1.0.0",
+  "description": "CHRONO-ZYMURGY OS: The Open-Source Pinter & Tau-Protocol Engine",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "concurrently -k \"npm run dev\" \"wait-on tcp:5173 && electron .\"",
+    "build": "vite build",
+    "electron:start": "electron .",
+    "preview": "vite preview",
+    "install-desktop": "bash install-popos-desktop.sh"
+  },
+  "keywords": [
+    "pinter",
+    "brewing",
+    "zymurgy",
+    "tau-protocol",
+    "pop-os",
+    "electron"
+  ],
+  "author": "Chrono-Zymurgy Collective",
+  "license": "MIT",
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^1.61.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "autoprefixer": "^10.6.1",
+    "concurrently": "^10.0.6",
+    "electron": "^45.0.0",
+    "tailwindcss": "^4.0.0",
+    "vite": "^8.3.5",
+    "wait-on": "^9.5.1"
+  }
+}
